@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0b2545">
+<title>KAMSA Admin Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="./supabase.js"></script>
+<style>
+  :root { --navy:#0b2545; --red:#c8102e; --ink:#233a58; --muted:#5c7291; --bg:#f4f6fa; --line:rgba(11,37,69,.12); --white:#fff; --green:#23613c; --green-bg:#eaf6ef; --amber:#8a5700; --amber-bg:#fff3dc; --danger:#8a1021; --danger-bg:#fbeaec; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:#0b0b12; font-family:Archivo,system-ui,-apple-system,"Segoe UI",sans-serif; -webkit-font-smoothing:antialiased; }
+  a { color:var(--red); text-decoration:none; }
+  button,input,select,textarea { font:inherit; }
+  button { cursor:pointer; }
+  .shell { min-height:100vh; }
+  header { position:sticky; top:0; z-index:20; display:flex; align-items:center; justify-content:space-between; gap:20px; padding:16px 32px; background:rgba(244,246,250,.94); backdrop-filter:blur(14px); border-bottom:1px solid var(--line); }
+  .brand { font-size:14px; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:var(--navy); }
+  .header-actions { display:flex; gap:10px; align-items:center; }
+  .btn { border:1px solid var(--line); border-radius:999px; padding:10px 16px; background:#fff; color:var(--navy); font-size:12px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; }
+  .btn.primary { background:var(--red); color:#fff; border-color:var(--red); }
+  .btn.success { background:var(--green); color:#fff; border-color:var(--green); }
+  .btn.danger { background:var(--danger); color:#fff; border-color:var(--danger); }
+  .btn:disabled { opacity:.55; cursor:default; }
+  main { max-width:1220px; margin:0 auto; padding:50px 32px 90px; }
+  .eyebrow { color:var(--red); font-size:12px; font-weight:800; letter-spacing:.16em; text-transform:uppercase; margin-bottom:10px; }
+  h1 { margin:0 0 10px; color:var(--navy); font-size:clamp(34px,5vw,56px); line-height:1; letter-spacing:-.035em; }
+  h2 { margin:0; color:var(--navy); font-size:26px; letter-spacing:-.02em; }
+  .sub { margin:0; color:var(--muted); max-width:780px; font-size:15px; line-height:1.7; }
+  .notice { margin:24px 0 0; padding:14px 16px; border-radius:14px; background:#fff; border:1px solid var(--line); color:var(--ink); font-size:14px; line-height:1.5; }
+  .notice.error { border-color:rgba(200,16,46,.25); color:var(--danger); background:#fff8f9; }
+  .grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:16px; margin-top:30px; }
+  .card { background:#fff; border-radius:20px; box-shadow:0 18px 44px -34px rgba(11,37,69,.6); border:1px solid rgba(11,37,69,.06); }
+  .metric { padding:22px; }
+  .metric .label { color:var(--muted); font-size:12px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; }
+  .metric .value { color:var(--navy); font-size:34px; font-weight:800; margin-top:7px; }
+  .toolbar { margin-top:28px; padding:18px; display:grid; grid-template-columns:1.5fr 1fr 1fr auto; gap:12px; align-items:end; }
+  .field label { display:block; margin:0 0 7px; color:var(--muted); font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; }
+  input,select,textarea { width:100%; border:1px solid var(--line); border-radius:12px; background:#fff; color:#0b0b12; padding:12px 13px; outline:none; }
+  textarea { min-height:120px; resize:vertical; }
+  input:focus,select:focus,textarea:focus { border-color:var(--red); box-shadow:0 0 0 3px rgba(200,16,46,.08); }
+  .section-head { display:flex; justify-content:space-between; align-items:end; gap:20px; margin:34px 0 14px; }
+  .count { color:var(--muted); font-size:13px; }
+  .table-wrap { overflow:auto; }
+  table { width:100%; border-collapse:collapse; min-width:920px; }
+  th,td { padding:14px 15px; border-bottom:1px solid var(--line); text-align:left; vertical-align:middle; }
+  th { color:var(--muted); font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; background:#fbfcfe; }
+  td { color:var(--ink); font-size:13px; }
+  td strong { display:block; color:var(--navy); font-size:14px; }
+  td span.secondary { display:block; margin-top:3px; color:var(--muted); font-size:12px; }
+  .pill { display:inline-flex; align-items:center; gap:6px; border-radius:999px; padding:6px 9px; font-size:11px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; background:#edf1f6; color:var(--navy); }
+  .pill.active, .pill.approved { background:var(--green-bg); color:var(--green); }
+  .pill.pending { background:var(--amber-bg); color:var(--amber); }
+  .pill.expired, .pill.suspended, .pill.rejected { background:var(--danger-bg); color:var(--danger); }
+  .row-actions { display:flex; gap:7px; flex-wrap:wrap; }
+  .small { padding:8px 11px; font-size:11px; }
+  .empty { padding:32px; color:var(--muted); text-align:center; }
+  .modal-backdrop { position:fixed; inset:0; z-index:50; background:rgba(11,37,69,.38); display:none; align-items:center; justify-content:center; padding:20px; }
+  .modal-backdrop.open { display:flex; }
+  .modal { width:min(800px,100%); max-height:92vh; overflow:auto; background:#fff; border-radius:24px; padding:28px; box-shadow:0 30px 90px rgba(11,37,69,.25); }
+  .modal-head { display:flex; justify-content:space-between; gap:16px; align-items:start; margin-bottom:20px; }
+  .modal h3 { margin:0; color:var(--navy); font-size:28px; letter-spacing:-.02em; }
+  .close { border:0; background:transparent; color:var(--muted); font-size:28px; line-height:1; }
+  .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .full { grid-column:1 / -1; }
+  .check { display:flex; gap:10px; align-items:center; color:var(--ink); font-size:13px; font-weight:600; }
+  .check input { width:auto; }
+  .modal-actions { display:flex; justify-content:flex-end; gap:10px; margin-top:24px; flex-wrap:wrap; }
+  .modal-actions.left { justify-content:flex-start; }
+  .review-banner { padding:14px 16px; border-radius:14px; background:var(--amber-bg); color:var(--amber); margin-bottom:20px; font-size:13px; line-height:1.5; }
+  .detail-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px 18px; margin-bottom:20px; }
+  .detail-label { color:var(--muted); font-size:10px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; }
+  .detail-value { color:var(--navy); font-size:14px; margin-top:2px; word-break:break-word; }
+  .loading { padding:60px 20px; text-align:center; color:var(--muted); }
+  @media (max-width:900px) { .grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .toolbar { grid-template-columns:1fr 1fr; } }
+  @media (max-width:640px) { header,main { padding-left:18px; padding-right:18px; } .grid { grid-template-columns:1fr 1fr; } .toolbar,.form-grid,.detail-grid { grid-template-columns:1fr; } .full { grid-column:auto; } .header-actions .btn:first-child { display:none; } }
+</style>
+</head>
+<body>
+<div class="shell">
+  <header>
+    <div class="brand">KAMSA Admin</div>
+    <div class="header-actions">
+      <a class="btn" href="./portal.html">Member Portal</a>
+      <button class="btn" id="logoutBtn">Log out</button>
+    </div>
+  </header>
+
+  <main id="app" style="display:none;">
+    <div class="eyebrow">Administration</div>
+    <h1>Member Management</h1>
+    <p class="sub">Review applications, manage member records, control membership status, and maintain directory information.</p>
+    <div class="notice" id="message" style="display:none;"></div>
+
+    <section class="grid" aria-label="Membership overview">
+      <article class="card metric"><div class="label">Active</div><div class="value" id="activeCount">0</div></article>
+      <article class="card metric"><div class="label">Pending</div><div class="value" id="pendingCount">0</div></article>
+      <article class="card metric"><div class="label">Expired</div><div class="value" id="expiredCount">0</div></article>
+      <article class="card metric"><div class="label">Directory Opt-in</div><div class="value" id="directoryCount">0</div></article>
+    </section>
+
+    <section aria-labelledby="applications-title">
+      <div class="section-head">
+        <div><h2 id="applications-title">Pending Applications</h2><div class="count" id="applicationCount">0 applications</div></div>
+        <button class="btn" id="refreshApplicationsBtn">Refresh</button>
+      </div>
+      <section class="card table-wrap">
+        <table>
+          <thead><tr>
+            <th>Applicant</th><th>Institution</th><th>Chapter</th><th>Submitted</th><th>Status</th><th>Action</th>
+          </tr></thead>
+          <tbody id="applicationRows"></tbody>
+        </table>
+        <div class="empty" id="applicationEmpty">No pending applications.</div>
+      </section>
+    </section>
+
+    <section aria-labelledby="members-title">
+      <div class="section-head">
+        <div><h2 id="members-title">Members</h2><div class="count" id="memberCount">0 members</div></div>
+      </div>
+
+      <section class="card toolbar" aria-label="Member filters">
+        <div class="field"><label for="search">Search</label><input id="search" type="search" placeholder="Name, email, school, chapter"></div>
+        <div class="field"><label for="statusFilter">Status</label><select id="statusFilter"><option value="">All statuses</option><option value="active">Active</option><option value="pending">Pending</option><option value="expired">Expired</option><option value="suspended">Suspended</option><option value="rejected">Rejected</option></select></div>
+        <div class="field"><label for="chapterFilter">Chapter</label><select id="chapterFilter"><option value="">All chapters</option></select></div>
+        <button class="btn primary" id="refreshBtn">Refresh</button>
+      </section>
+
+      <section class="card table-wrap">
+        <table>
+          <thead><tr>
+            <th>Member</th><th>Institution</th><th>Chapter</th><th>Status</th><th>Directory</th><th>Actions</th>
+          </tr></thead>
+          <tbody id="memberRows"></tbody>
+        </table>
+        <div class="empty" id="emptyState" style="display:none;">No members match the current filters.</div>
+      </section>
+    </section>
+  </main>
+
+  <div id="loading" class="loading">Checking administrator access...</div>
+</div>
+
+<div class="modal-backdrop" id="modalBackdrop">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-head">
+      <div><div class="eyebrow" id="modalEyebrow">Member record</div><h3 id="modalTitle">Edit member</h3></div>
+      <button class="close" id="closeModal" aria-label="Close">×</button>
+    </div>
+
+    <div id="reviewBanner" class="review-banner" style="display:none;">
+      This application is awaiting review. Approving it will activate the member account. Rejecting it will deny membership access.
+    </div>
+
+    <div id="reviewDetails" style="display:none;"></div>
+
+    <form id="editForm">
+      <input type="hidden" id="editId">
+      <div class="form-grid">
+        <div class="field"><label for="firstName">First name</label><input id="firstName" required></div>
+        <div class="field"><label for="lastName">Last name</label><input id="lastName" required></div>
+        <div class="field"><label for="personalEmail">Personal email</label><input id="personalEmail" type="email"></div>
+        <div class="field"><label for="schoolEmail">School email</label><input id="schoolEmail" type="email"></div>
+        <div class="field full"><label for="schoolInstitution">Institution</label><input id="schoolInstitution"></div>
+        <div class="field"><label for="graduationYear">Graduation year</label><input id="graduationYear" type="number" min="1900" max="2100"></div>
+        <div class="field"><label for="membershipTier">Membership tier</label><input id="membershipTier"></div>
+        <div class="field"><label for="membershipStatus">Membership status</label><select id="membershipStatus"><option value="pending">Pending</option><option value="active">Active</option><option value="expired">Expired</option><option value="suspended">Suspended</option><option value="rejected">Rejected</option></select></div>
+        <div class="field"><label for="applicationStatus">Application status</label><select id="applicationStatus"><option value="pending">Pending</option><option value="approved">Approved</option><option value="rejected">Rejected</option></select></div>
+        <div class="field"><label for="regionalChapter">Regional chapter</label><input id="regionalChapter"></div>
+        <div class="field"><label for="chapterRole">Chapter role</label><input id="chapterRole"></div>
+        <div class="field full"><label for="specialtyInterest">Specialty interest</label><input id="specialtyInterest"></div>
+        <div class="field full"><label for="linkedinProfile">LinkedIn profile</label><input id="linkedinProfile" type="url"></div>
+        <div class="field full"><label for="adminNotes">Internal admin notes</label><textarea id="adminNotes" placeholder="Visible only to KAMSA administrators"></textarea></div>
+        <div class="full"><label class="check"><input id="directoryConsent" type="checkbox"> Consented to membership directory and member email sharing</label></div>
+      </div>
+      <div class="modal-actions left" id="reviewActions" style="display:none;">
+        <button type="button" class="btn success" id="approveBtn">Approve application</button>
+        <button type="button" class="btn danger" id="rejectBtn">Reject application</button>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn" id="cancelEdit">Close</button>
+        <button type="submit" class="btn primary" id="saveBtn">Save changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  const state = { members: [], applications: [], filtered: [], editingId: null, reviewMode: false, currentAdminId: null };
+  const $ = (id) => document.getElementById(id);
+
+  function showMessage(text, error = false) {
+    $('message').textContent = text;
+    $('message').style.display = text ? 'block' : 'none';
+    $('message').classList.toggle('error', error);
+  }
+
+  function norm(v) { return String(v ?? '').trim().toLowerCase(); }
+  function escapeHtml(value) { return String(value ?? '').replace(/[&<>'"]/g, (ch) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch])); }
+  function statusPill(status) {
+    const s = norm(status) || 'pending';
+    return `<span class="pill ${escapeHtml(s)}">${escapeHtml(status || 'pending')}</span>`;
+  }
+  function formatDate(value) {
+    if (!value) return '—';
+    const d = new Date(value);
+    return Number.isNaN(d.getTime()) ? '—' : d.toLocaleDateString(undefined, { year:'numeric', month:'short', day:'numeric' });
+  }
+
+  function populateChapterFilter() {
+    const select = $('chapterFilter');
+    const current = select.value;
+    const chapters = Array.from(new Set(state.members.map(m => m.regional_chapter).filter(Boolean))).sort((a,b) => a.localeCompare(b));
+    select.innerHTML = '<option value="">All chapters</option>' + chapters.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+    if (chapters.includes(current)) select.value = current;
+  }
+
+  function renderMetrics() {
+    $('activeCount').textContent = state.members.filter(m => norm(m.membership_status) === 'active').length;
+    $('pendingCount').textContent = state.members.filter(m => norm(m.membership_status) === 'pending').length;
+    $('expiredCount').textContent = state.members.filter(m => norm(m.membership_status) === 'expired').length;
+    $('directoryCount').textContent = state.members.filter(m => Boolean(m.consent_membership_directory)).length;
+  }
+
+  function applyFilters() {
+    const q = norm($('search').value);
+    const status = $('statusFilter').value;
+    const chapter = $('chapterFilter').value;
+    state.filtered = state.members.filter(m => {
+      const hay = [m.first_name,m.last_name,m.personal_email,m.school_email,m.school_institution,m.regional_chapter,m.regional_chapter_role,m.specialty_interest].map(norm).join(' ');
+      return (!q || hay.includes(q)) && (!status || norm(m.membership_status) === status) && (!chapter || m.regional_chapter === chapter);
+    });
+    renderTable();
+  }
+
+  function renderTable() {
+    const rows = $('memberRows');
+    $('memberCount').textContent = `${state.filtered.length} ${state.filtered.length === 1 ? 'member' : 'members'}`;
+    if (!state.filtered.length) {
+      rows.innerHTML = '';
+      $('emptyState').style.display = 'block';
+      return;
+    }
+    $('emptyState').style.display = 'none';
+    rows.innerHTML = state.filtered.map(m => {
+      const name = [m.first_name,m.last_name].filter(Boolean).join(' ') || 'Unnamed member';
+      const email = m.school_email || m.personal_email || '';
+      return `<tr>
+        <td><strong>${escapeHtml(name)}</strong><span class="secondary">${escapeHtml(email)}</span></td>
+        <td>${escapeHtml(m.school_institution || '—')}</td>
+        <td>${escapeHtml(m.regional_chapter || '—')}</td>
+        <td>${statusPill(m.membership_status)}</td>
+        <td>${m.consent_membership_directory ? '<span class="pill active">Yes</span>' : '<span class="pill">No</span>'}</td>
+        <td><div class="row-actions"><button class="btn small" data-edit="${escapeHtml(m.id)}">Edit</button></div></td>
+      </tr>`;
+    }).join('');
+  }
+
+  function renderApplications() {
+    const rows = $('applicationRows');
+    $('applicationCount').textContent = `${state.applications.length} ${state.applications.length === 1 ? 'application' : 'applications'}`;
+    $('applicationEmpty').style.display = state.applications.length ? 'none' : 'block';
+    rows.innerHTML = state.applications.map(m => {
+      const name = [m.first_name,m.last_name].filter(Boolean).join(' ') || 'Unnamed applicant';
+      const email = m.school_email || m.personal_email || '';
+      return `<tr>
+        <td><strong>${escapeHtml(name)}</strong><span class="secondary">${escapeHtml(email)}</span></td>
+        <td>${escapeHtml(m.school_institution || '—')}</td>
+        <td>${escapeHtml(m.regional_chapter || '—')}</td>
+        <td>${escapeHtml(formatDate(m.application_submitted_at || m.created_at))}</td>
+        <td>${statusPill(m.application_status || 'pending')}</td>
+        <td><button class="btn primary small" data-review="${escapeHtml(m.id)}">Review</button></td>
+      </tr>`;
+    }).join('');
+  }
+
+  function fillForm(member) {
+    $('editId').value = member.id;
+    $('modalTitle').textContent = [member.first_name, member.last_name].filter(Boolean).join(' ') || 'Edit member';
+    $('firstName').value = member.first_name || '';
+    $('lastName').value = member.last_name || '';
+    $('personalEmail').value = member.personal_email || '';
+    $('schoolEmail').value = member.school_email || '';
+    $('schoolInstitution').value = member.school_institution || '';
+    $('graduationYear').value = member.graduation_year || '';
+    $('membershipTier').value = member.membership_tier || '';
+    $('membershipStatus').value = norm(member.membership_status) || 'pending';
+    $('applicationStatus').value = norm(member.application_status) || 'pending';
+    $('regionalChapter').value = member.regional_chapter || '';
+    $('chapterRole').value = member.regional_chapter_role || '';
+    $('specialtyInterest').value = Array.isArray(member.specialty_interest) ? member.specialty_interest.join(', ') : (member.specialty_interest || '');
+    $('linkedinProfile').value = member.linkedin_profile || '';
+    $('adminNotes').value = member.admin_notes || '';
+    $('directoryConsent').checked = Boolean(member.consent_membership_directory);
+  }
+
+  function openEdit(member) {
+    state.editingId = member.id;
+    state.reviewMode = false;
+    fillForm(member);
+    $('modalEyebrow').textContent = 'Member record';
+    $('reviewBanner').style.display = 'none';
+    $('reviewDetails').style.display = 'none';
+    $('reviewActions').style.display = 'none';
+    $('modalBackdrop').classList.add('open');
+  }
+
+  function openReview(member) {
+    state.editingId = member.id;
+    state.reviewMode = true;
+    fillForm(member);
+    $('modalEyebrow').textContent = 'Application review';
+    $('modalTitle').textContent = [member.first_name, member.last_name].filter(Boolean).join(' ') || 'Review application';
+    $('reviewBanner').style.display = 'block';
+    $('reviewActions').style.display = 'flex';
+    $('modalBackdrop').classList.add('open');
+  }
+
+  function closeModal() {
+    state.editingId = null;
+    state.reviewMode = false;
+    $('modalBackdrop').classList.remove('open');
+  }
+
+  async function requireAdmin() {
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
+    if (authError || !user) {
+      window.location.href = './signup.html?mode=login';
+      return false;
+    }
+    const { data: admin, error } = await supabaseClient.rpc('is_admin');
+    if (error || admin !== true) {
+      window.location.href = './portal.html';
+      return false;
+    }
+    state.currentAdminId = user.id;
+    return true;
+  }
+
+  async function loadMembers() {
+    const { data, error } = await supabaseClient
+      .from('members')
+      .select('id,user_id,first_name,last_name,personal_email,school_email,school_institution,graduation_year,membership_tier,membership_status,application_status,application_submitted_at,application_reviewed_at,application_reviewed_by,admin_notes,linkedin_profile,regional_chapter,regional_chapter_role,specialty_interest,consent_membership_directory,airtable_record_id,created_at,updated_at')
+      .order('last_name', { ascending: true })
+      .order('first_name', { ascending: true });
+    if (error) {
+      console.error(error);
+      showMessage(`Members could not be loaded: ${error.message}`, true);
+      return;
+    }
+    state.members = data || [];
+    state.applications = state.members.filter(m => norm(m.application_status || 'pending') === 'pending');
+    populateChapterFilter();
+    renderMetrics();
+    applyFilters();
+    renderApplications();
+  }
+
+  async function saveMember(showSuccess = true) {
+    const id = $('editId').value;
+    const specialtyRaw = $('specialtyInterest').value.trim();
+    const payload = {
+      first_name: $('firstName').value.trim(),
+      last_name: $('lastName').value.trim(),
+      personal_email: $('personalEmail').value.trim() || null,
+      school_email: $('schoolEmail').value.trim() || null,
+      school_institution: $('schoolInstitution').value.trim() || null,
+      graduation_year: $('graduationYear').value ? Number($('graduationYear').value) : null,
+      membership_tier: $('membershipTier').value.trim() || null,
+      membership_status: $('membershipStatus').value,
+      application_status: $('applicationStatus').value,
+      regional_chapter: $('regionalChapter').value.trim() || null,
+      regional_chapter_role: $('chapterRole').value.trim() || null,
+      specialty_interest: specialtyRaw || null,
+      linkedin_profile: $('linkedinProfile').value.trim() || null,
+      admin_notes: $('adminNotes').value.trim() || null,
+      consent_membership_directory: $('directoryConsent').checked,
+      updated_at: new Date().toISOString()
+    };
+
+    const { data, error } = await supabaseClient.from('members').update(payload).eq('id', id).select().single();
+    if (error) {
+      console.error(error);
+      throw error;
+    }
+    const idx = state.members.findIndex(m => m.id === id);
+    if (idx >= 0) state.members[idx] = { ...state.members[idx], ...data };
+    state.applications = state.members.filter(m => norm(m.application_status || 'pending') === 'pending');
+    populateChapterFilter();
+    renderMetrics();
+    applyFilters();
+    renderApplications();
+    if (showSuccess) showMessage('Member record updated successfully.');
+  }
+
+  async function reviewApplication(memberId, decision) {
+    const member = state.members.find(m => m.id === memberId);
+    if (!member) return;
+
+    const confirmText = decision === 'approved'
+      ? `Approve ${[member.first_name, member.last_name].filter(Boolean).join(' ') || 'this application'} as an active KAMSA member?`
+      : `Reject ${[member.first_name, member.last_name].filter(Boolean).join(' ') || 'this application'}?`;
+    if (!window.confirm(confirmText)) return;
+
+    const button = decision === 'approved' ? $('approveBtn') : $('rejectBtn');
+    button.disabled = true;
+    button.textContent = decision === 'approved' ? 'Approving...' : 'Rejecting...';
+
+    const payload = {
+      application_status: decision,
+      membership_status: decision === 'approved' ? 'active' : 'rejected',
+      application_reviewed_at: new Date().toISOString(),
+      application_reviewed_by: state.currentAdminId,
+      updated_at: new Date().toISOString()
+    };
+
+    const { data, error } = await supabaseClient
+      .from('members')
+      .update(payload)
+      .eq('id', memberId)
+      .select()
+      .single();
+
+    button.disabled = false;
+    button.textContent = decision === 'approved' ? 'Approve application' : 'Reject application';
+
+    if (error) {
+      console.error(error);
+      alert(`Could not ${decision === 'approved' ? 'approve' : 'reject'} the application: ${error.message}`);
+      return;
+    }
+
+    const idx = state.members.findIndex(m => m.id === memberId);
+    if (idx >= 0) state.members[idx] = { ...state.members[idx], ...data };
+    state.applications = state.members.filter(m => norm(m.application_status || 'pending') === 'pending');
+    closeModal();
+    renderMetrics();
+    applyFilters();
+    renderApplications();
+    showMessage(decision === 'approved' ? 'Application approved. Membership is now active.' : 'Application rejected.');
+  }
+
+  $('applicationRows').addEventListener('click', (event) => {
+    const button = event.target.closest('[data-review]');
+    if (!button) return;
+    const member = state.applications.find(m => m.id === button.dataset.review);
+    if (member) openReview(member);
+  });
+
+  $('memberRows').addEventListener('click', (event) => {
+    const button = event.target.closest('[data-edit]');
+    if (!button) return;
+    const member = state.members.find(m => m.id === button.dataset.edit);
+    if (member) openEdit(member);
+  });
+
+  $('search').addEventListener('input', applyFilters);
+  $('statusFilter').addEventListener('change', applyFilters);
+  $('chapterFilter').addEventListener('change', applyFilters);
+  $('refreshBtn').addEventListener('click', async () => { await loadMembers(); });
+  $('refreshApplicationsBtn').addEventListener('click', async () => { await loadMembers(); });
+  $('closeModal').addEventListener('click', closeModal);
+  $('cancelEdit').addEventListener('click', closeModal);
+  $('modalBackdrop').addEventListener('click', (event) => { if (event.target === $('modalBackdrop')) closeModal(); });
+  $('approveBtn').addEventListener('click', () => reviewApplication(state.editingId, 'approved'));
+  $('rejectBtn').addEventListener('click', () => reviewApplication(state.editingId, 'rejected'));
+
+  $('editForm').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const saveBtn = $('saveBtn');
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Saving...';
+    try {
+      await saveMember();
+      closeModal();
+    } catch (error) {
+      alert(`Could not save this member: ${error.message}`);
+    } finally {
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'Save changes';
+    }
+  });
+
+  $('logoutBtn').addEventListener('click', async () => {
+    await supabaseClient.auth.signOut();
+    window.location.href = './signup.html?mode=login';
+  });
+
+  (async function init() {
+    try {
+      const ok = await requireAdmin();
+      if (!ok) return;
+      $('loading').style.display = 'none';
+      $('app').style.display = 'block';
+      await loadMembers();
+    } catch (error) {
+      console.error(error);
+      $('loading').textContent = 'Unable to load the admin portal.';
+    }
+  })();
+</script>
+</body>
+</html>
