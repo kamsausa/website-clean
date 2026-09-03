@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>Email Verified | KAMSA</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&display=swap"
+    rel="stylesheet"
+  >
+
+  <style>
+    :root {
+      --navy: #0b2545;
+      --red: #c8102e;
+      --muted: #5c7291;
+      --bg: #f4f6fa;
+      --white: #ffffff;
+      --line: rgba(11,37,69,.12);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background: var(--bg);
+      color: var(--navy);
+      font-family: Archivo, system-ui, -apple-system, "Segoe UI", sans-serif;
+    }
+
+    .card {
+      width: min(620px, calc(100% - 36px));
+      background: var(--white);
+      border: 1px solid rgba(11,37,69,.06);
+      border-radius: 24px;
+      padding: 44px;
+      box-shadow: 0 24px 70px rgba(11,37,69,.12);
+      text-align: center;
+    }
+
+    .eyebrow {
+      color: var(--red);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+
+    h1 {
+      margin: 0 0 18px;
+      font-size: clamp(32px, 6vw, 48px);
+      line-height: 1.05;
+      letter-spacing: -.035em;
+    }
+
+    p {
+      color: var(--muted);
+      font-size: 16px;
+      line-height: 1.7;
+      margin: 0 auto 16px;
+      max-width: 510px;
+    }
+
+    .status {
+      margin: 28px auto;
+      padding: 18px 20px;
+      border-radius: 16px;
+      background: #f8fafc;
+      border: 1px solid var(--line);
+      text-align: left;
+    }
+
+    .status strong {
+      display: block;
+      color: var(--navy);
+      margin-bottom: 5px;
+    }
+
+    .btn {
+      display: inline-block;
+      margin-top: 14px;
+      padding: 13px 22px;
+      border-radius: 999px;
+      background: var(--red);
+      color: white;
+      text-decoration: none;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .btn.secondary {
+      background: transparent;
+      color: var(--navy);
+      border: 1px solid var(--line);
+      margin-left: 8px;
+    }
+
+    @media (max-width: 560px) {
+      .card {
+        padding: 32px 24px;
+      }
+
+      .btn {
+        display: block;
+        margin: 12px 0 0;
+      }
+
+      .btn.secondary {
+        margin-left: 0;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <main class="card">
+
+    <div class="eyebrow">KAMSA Membership</div>
+
+    <h1>Email verified.</h1>
+
+    <p>
+      Your email address has been successfully verified.
+    </p>
+
+    <div class="status">
+      <strong>Your application is now under review.</strong>
+
+      KAMSA will review your membership application and notify you
+      by email once a decision has been made.
+    </div>
+
+    <p>
+      You don't need to do anything else right now.
+    </p>
+
+    <a class="btn" href="./index.html">
+      Return to KAMSA
+    </a>
+
+    <a class="btn secondary" href="./signup.html?mode=login">
+      Member Login
+    </a>
+
+  </main>
+
+</body>
+</html>
