@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Log in to KAMSA or sign up as a new member.">
+<meta name="theme-color" content="#0b2545">
+<title>Log In or Sign Up | KAMSA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="./supabase.js"></script>
+<style>
+body { margin:0; background:#f4f6fa; color:#0b0b12; font-family:Archivo,system-ui,-apple-system,"Segoe UI",sans-serif; -webkit-font-smoothing:antialiased; }
+* { box-sizing:border-box; }
+a { color:#c8102e; text-decoration:none; }
+a:hover { color:#9c0c23; }
+a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible { outline:2px solid #c8102e; outline-offset:3px; }
+::selection { background:rgba(200,16,46,.16); }
+input,select { font-family:inherit; }
+label { display:flex; flex-direction:column; gap:8px; }
+.field-label { font-size:12px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:#5c7291; }
+input,select { padding:14px 16px; border-radius:12px; border:1.5px solid rgba(11,37,69,.16); background:#fff; font-size:15px; color:#0b2545; width:100%; }
+button { font-family:inherit; }
+.hidden { display:none !important; }
+.message { margin:0 0 18px; padding:14px 16px; border-radius:12px; background:#fff; border:1px solid rgba(11,37,69,.12); color:#26405f; font-size:14px; line-height:1.55; }
+.message.error { border-color:rgba(200,16,46,.3); color:#8f1125; background:#fff7f8; }
+.message.success { border-color:rgba(35,97,60,.25); color:#23613c; background:#f4fbf6; }
+@media (max-width:760px) {
+  header { padding-left:18px !important; padding-right:18px !important; }
+  section.main-section { padding-left:18px !important; padding-right:18px !important; }
+  .row2 { grid-template-columns:1fr !important; }
+}
+</style>
+</head>
+<body>
+<div style="background:#f4f6fa;min-height:100vh;overflow:hidden">
+<header style="position:sticky;top:0;z-index:50;display:flex;align-items:center;justify-content:space-between;gap:24px;padding:14px 32px;background:rgba(244,246,250,.9);backdrop-filter:blur(14px);border-bottom:1px solid rgba(11,37,69,.12)">
+  <a href="index.html" aria-label="KAMSA home" style="display:inline-flex"><img src="assets/kamsa-logo.png" alt="KAMSA" style="width:176px;height:auto"></a>
+  <nav aria-label="Primary" style="display:flex;align-items:center;gap:18px">
+    <a href="index.html" style="font-size:12.5px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;white-space:nowrap;color:#26405f">← Back to KAMSA</a>
+  </nav>
+</header>
+
+<section class="main-section" style="padding:72px 32px 32px;max-width:760px;margin:0 auto">
+  <p id="kicker" style="margin:0 0 18px;display:inline-flex;padding:8px 16px;border-radius:999px;background:rgba(200,16,46,.1);font-size:11.5px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:#c8102e">New member</p>
+  <h1 id="heading" style="margin:0 0 16px;font-size:clamp(34px,4.6vw,54px);line-height:1.02;letter-spacing:-.03em;font-weight:800;color:#0b2545">Join KAMSA</h1>
+  <p id="intro" style="margin:0 0 26px;font-size:16.5px;line-height:1.6;color:#4d6484">Tell us a bit about yourself.</p>
+  <div role="tablist" aria-label="Account actions" style="display:inline-flex;gap:4px;padding:4px;border-radius:999px;background:rgba(11,37,69,.07)">
+    <button type="button" id="loginTab" style="padding:10px 22px;border-radius:999px;border:none;font-family:inherit;font-size:12.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;background:transparent;color:#5c7291">Log in</button>
+    <button type="button" id="signupTab" style="padding:10px 22px;border-radius:999px;border:none;font-family:inherit;font-size:12.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;background:#0b2545;color:#fff">Sign up</button>
+  </div>
+</section>
+
+<section id="content" class="main-section" style="padding:0 32px 100px;max-width:760px;margin:0 auto">
+  <div id="message" class="message hidden" role="status" aria-live="polite"></div>
+
+  <form id="loginForm" class="hidden" style="display:flex;flex-direction:column;gap:20px">
+    <label>
+      <span class="field-label">Email</span>
+      <input id="loginEmail" required type="email" autocomplete="email" placeholder="you@school.edu">
+    </label>
+    <label>
+      <span class="field-label">Password</span>
+      <input id="loginPassword" required type="password" autocomplete="current-password">
+    </label>
+    <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap">
+      <button id="loginButton" type="submit" style="padding:17px 30px;border-radius:999px;border:none;background:linear-gradient(135deg,#c8102e 0%,#e01b2e 100%);color:#fff;font-size:13px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;box-shadow:0 16px 34px -14px rgba(200,16,46,.8)">Log in</button>
+      <button id="forgotButton" type="button" style="padding:0;border:none;background:transparent;color:#5c7291;font-size:13.5px;font-weight:600;cursor:pointer">Forgot password?</button>
+    </div>
+  </form>
+
+  <form id="signupForm" style="display:flex;flex-direction:column;gap:20px">
+    <div class="row2" style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+      <label>
+        <span class="field-label">First name</span>
+        <input id="firstName" required type="text" autocomplete="given-name">
+      </label>
+      <label>
+        <span class="field-label">Last name</span>
+        <input id="lastName" required type="text" autocomplete="family-name">
+      </label>
+    </div>
+
+    <label>
+      <span class="field-label">Email</span>
+      <input id="signupEmail" required type="email" autocomplete="email" placeholder="you@school.edu">
+    </label>
+
+    <div class="row2" style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+      <label>
+        <span class="field-label">Password</span>
+        <input id="signupPassword" required type="password" minlength="8" autocomplete="new-password" placeholder="At least 8 characters">
+      </label>
+      <label>
+        <span class="field-label">Confirm password</span>
+        <input id="signupPasswordConfirm" required type="password" minlength="8" autocomplete="new-password">
+      </label>
+    </div>
+
+    <label>
+      <span class="field-label">School / institution</span>
+      <input id="schoolInstitution" required type="text">
+    </label>
+
+    <div class="row2" style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+      <label>
+        <span class="field-label">Graduation year</span>
+        <input id="graduationYear" required type="number" min="1900" max="2100">
+      </label>
+      <label>
+        <span class="field-label">Current status</span>
+        <select id="currentStatus" required>
+          <option value="">Select one</option>
+          <option value="Medical student">Medical student</option>
+          <option value="Pre-medical student">Pre-medical student</option>
+          <option value="Alumni">Alumni</option>
+        </select>
+      </label>
+    </div>
+
+    <fieldset style="margin:0;padding:0;border:none;display:flex;flex-direction:column;gap:8px">
+      <legend class="field-label" style="padding:0;margin:0 0 4px">Regional chapter</legend>
+      <p style="margin:0 0 4px;font-size:15px;line-height:1.5;color:#26405f">Would you like to be connected with a regional chapter?</p>
+      <div class="row2" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <label style="display:flex;align-items:center;gap:10px;padding:14px 16px;border-radius:12px;border:1.5px solid rgba(11,37,69,.16);background:#fff;font-size:15px;color:#0b2545;cursor:pointer"><input type="radio" name="chapterInterest" value="Yes, connect me" required style="accent-color:#c8102e;width:17px;height:17px">Yes, connect me</label>
+        <label style="display:flex;align-items:center;gap:10px;padding:14px 16px;border-radius:12px;border:1.5px solid rgba(11,37,69,.16);background:#fff;font-size:15px;color:#0b2545;cursor:pointer"><input type="radio" name="chapterInterest" value="Not right now" style="accent-color:#c8102e;width:17px;height:17px">Not right now</label>
+      </div>
+    </fieldset>
+
+    <fieldset style="margin:0;padding:0;border:none;display:flex;flex-direction:column;gap:8px">
+      <legend class="field-label" style="padding:0;margin:0 0 4px">Membership directory</legend>
+      <p style="margin:0 0 4px;font-size:15px;line-height:1.5;color:#26405f">Can we include you in the membership directory? This shares your profile and email with other consenting KAMSA members.</p>
+      <div class="row2" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <label style="display:flex;align-items:center;gap:10px;padding:14px 16px;border-radius:12px;border:1.5px solid rgba(11,37,69,.16);background:#fff;font-size:15px;color:#0b2545;cursor:pointer"><input type="radio" name="directoryOptIn" value="true" required style="accent-color:#c8102e;width:17px;height:17px">Yes, include me</label>
+        <label style="display:flex;align-items:center;gap:10px;padding:14px 16px;border-radius:12px;border:1.5px solid rgba(11,37,69,.16);background:#fff;font-size:15px;color:#0b2545;cursor:pointer"><input type="radio" name="directoryOptIn" value="false" style="accent-color:#c8102e;width:17px;height:17px">No, keep me private</label>
+      </div>
+    </fieldset>
+
+    <button id="signupButton" type="submit" style="align-self:flex-start;padding:17px 30px;border-radius:999px;border:none;background:linear-gradient(135deg,#c8102e 0%,#e01b2e 100%);color:#fff;font-size:13px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;box-shadow:0 16px 34px -14px rgba(200,16,46,.8)">Submit application</button>
+  </form>
+</section>
+
+<footer style="border-top:1px solid rgba(11,37,69,.12);padding:28px 32px">
+  <small style="display:block;font-size:12px;letter-spacing:.04em;color:#5c7291">© 2026 Korean American Medical Student Association</small>
+</footer>
+</div>
+
+<script>
+  const loginTab = document.getElementById('loginTab');
+  const signupTab = document.getElementById('signupTab');
+  const loginForm = document.getElementById('loginForm');
+  const signupForm = document.getElementById('signupForm');
+  const message = document.getElementById('message');
+  const kicker = document.getElementById('kicker');
+  const heading = document.getElementById('heading');
+  const intro = document.getElementById('intro');
+
+  function setMode(mode) {
+    const isLogin = mode === 'login';
+    loginForm.classList.toggle('hidden', !isLogin);
+    signupForm.classList.toggle('hidden', isLogin);
+    loginTab.style.background = isLogin ? '#0b2545' : 'transparent';
+    loginTab.style.color = isLogin ? '#fff' : '#5c7291';
+    signupTab.style.background = isLogin ? 'transparent' : '#0b2545';
+    signupTab.style.color = isLogin ? '#5c7291' : '#fff';
+    kicker.textContent = isLogin ? 'Member login' : 'New member';
+    heading.textContent = isLogin ? 'Welcome back' : 'Join KAMSA';
+    intro.textContent = isLogin
+      ? 'Sign in to reach the member directory and partner discounts.'
+      : 'Tell us a bit about yourself.';
+    clearMessage();
+  }
+
+  function showMessage(text, type = '') {
+    message.textContent = text;
+    message.className = 'message' + (type ? ' ' + type : '');
+    message.classList.remove('hidden');
+  }
+
+  function clearMessage() {
+    message.textContent = '';
+    message.className = 'message hidden';
+  }
+
+  function getChapterInterest() {
+    return document.querySelector('input[name="chapterInterest"]:checked')?.value || null;
+  }
+
+  function getDirectoryConsent() {
+    const value = document.querySelector('input[name="directoryOptIn"]:checked')?.value;
+    return value === 'true';
+  }
+
+  loginTab.addEventListener('click', () => setMode('login'));
+  signupTab.addEventListener('click', () => setMode('signup'));
+
+  document.getElementById('loginForm').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    clearMessage();
+    const button = document.getElementById('loginButton');
+    button.disabled = true;
+    button.textContent = 'Logging in...';
+
+    try {
+      const email = document.getElementById('loginEmail').value.trim();
+      const password = document.getElementById('loginPassword').value;
+      const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      window.location.href = './portal.html';
+    } catch (error) {
+      showMessage(error.message || 'Unable to log in.', 'error');
+    } finally {
+      button.disabled = false;
+      button.textContent = 'Log in';
+    }
+  });
+
+  document.getElementById('forgotButton').addEventListener('click', async () => {
+    clearMessage();
+    const email = document.getElementById('loginEmail').value.trim();
+    if (!email) {
+      showMessage('Enter your email address first, then click Forgot password.', 'error');
+      return;
+    }
+    try {
+      const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+        redirectTo: 'https://kamsaus.org/signup.html?mode=login'
+      });
+      if (error) throw error;
+      showMessage('Password reset instructions have been sent if this email is associated with a KAMSA account.', 'success');
+    } catch (error) {
+      showMessage(error.message || 'Unable to send password reset instructions.', 'error');
+    }
+  });
+
+  document.getElementById('signupForm').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    clearMessage();
+    const button = document.getElementById('signupButton');
+    button.disabled = true;
+    button.textContent = 'Submitting...';
+
+    try {
+      const firstName = document.getElementById('firstName').value.trim();
+      const lastName = document.getElementById('lastName').value.trim();
+      const email = document.getElementById('signupEmail').value.trim();
+      const password = document.getElementById('signupPassword').value;
+      const confirmPassword = document.getElementById('signupPasswordConfirm').value;
+      const schoolInstitution = document.getElementById('schoolInstitution').value.trim();
+      const graduationYear = Number(document.getElementById('graduationYear').value);
+      const currentStatus = document.getElementById('currentStatus').value;
+      const chapterInterest = getChapterInterest();
+      const directoryConsent = getDirectoryConsent();
+
+      if (password !== confirmPassword) throw new Error('Passwords do not match.');
+      if (password.length < 8) throw new Error('Password must be at least 8 characters.');
+      if (!Number.isInteger(graduationYear)) throw new Error('Please enter a valid graduation year.');
+
+      const { data, error } = await supabaseClient.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: 'https://kamsaus.org/verify.html',
+          data: {
+            first_name: firstName,
+            last_name: lastName,
+            school_institution: schoolInstitution,
+            graduation_year: graduationYear,
+            current_status: currentStatus,
+            chapter_interest: chapterInterest,
+            directory_consent: directoryConsent,
+            membership_tier: 'Standard'
+          }
+        }
+      });
+
+      if (error) throw error;
+
+      if (!data.user) {
+        throw new Error('Your account could not be created. Please try again.');
+      }
+
+      showMessage('Application submitted. Please check your email and confirm your email address. Your KAMSA application will remain pending until reviewed by an administrator.', 'success');
+      signupForm.reset();
+    } catch (error) {
+      showMessage(error.message || 'Unable to submit your application.', 'error');
+    } finally {
+      button.disabled = false;
+      button.textContent = 'Submit application';
+    }
+  });
+
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('mode') === 'login') setMode('login');
+  else setMode('signup');
+</script>
+
+<script src="./auth-nav.js"></script>
+</body>
+</html>
