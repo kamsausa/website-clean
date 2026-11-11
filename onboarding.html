@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co; connect-src 'self' https://*.supabase.co wss://*.supabase.co; base-uri 'self'; form-action 'self'; object-src 'none'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0b2545">
+<title>Set up your profile | KAMSA</title>
+<link rel="icon" href="assets/kamsa-logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/kamsa-auth.css">
+<script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js" integrity="sha384-BWcjm9OdFth9TbhCxZPdm+gAOUMAzQy9nmTs12ioXdCcbVnJaPMn+fMUoQCLt60R" crossorigin="anonymous"></script>
+<script defer src="supabase.js"></script>
+<script defer src="js/kamsa-auth.js"></script>
+<script defer src="js/profile-form.js"></script>
+<script defer src="js/onboarding.js"></script>
+</head>
+<body>
+<header class="site-header">
+  <a class="logo" href="index.html" aria-label="KAMSA home"><img src="assets/kamsa-logo.png" alt="KAMSA"></a>
+  <nav class="site-nav" aria-label="Account">
+    <a href="index.html">KAMSA home</a>
+    <button type="button" id="logout">Log out</button>
+  </nav>
+</header>
+
+<main class="wrap" id="main">
+  <p class="kicker">Step 3 of 4</p>
+  <h1 class="title" id="heading">Set up your profile</h1>
+  <p class="lede" id="intro">This is what the national board reviews, and what other members see if you join the directory. You can update most of it later.</p>
+
+  <ol class="steps" aria-label="Sign-up progress">
+    <li class="done">Create account</li>
+    <li class="done">Confirm email</li>
+    <li class="current" aria-current="step">Set up profile</li>
+    <li>Board review</li>
+  </ol>
+
+  <div id="message" class="message" hidden></div>
+  <div class="loading" id="loading"><span class="spinner" aria-hidden="true"></span>Loading your account…</div>
+
+  <form id="profileForm" class="card" novalidate hidden>
+    <p class="small muted" style="margin:0 0 22px">Signed in as <strong id="accountEmail" style="color:var(--navy)"></strong></p>
+    <div id="profileFields"></div>
+    <div class="actions" style="margin-top:28px">
+      <button type="submit" class="btn btn-primary" id="saveButton">Finish and submit</button>
+    </div>
+  </form>
+</main>
+
+<footer class="site-footer">
+  <small>© 2026 Korean American Medical Student Association</small>
+  <small><a href="privacy.html">Privacy</a> · <a href="mailto:kamsa.usa@gmail.com">kamsa.usa@gmail.com</a></small>
+</footer>
+</body>
+</html>
