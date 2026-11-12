@@ -68,6 +68,7 @@ export default async function handler(req, res) {
         `Status: ${clean(record.current_status, 40)}`,
         `Chapter: ${clean(record.regional_chapter, 40) || 'none'}`,
         `Email: ${email}`,
+        `Membership ID: ${clean(record.membership_id, 40)}`,
         '',
         `Review it in the admin page: ${site}/admin.html`,
       ].join('\n'),
@@ -80,7 +81,7 @@ export default async function handler(req, res) {
       sender,
       to: [{ email, name: `${first} ${last}`.trim() || undefined }],
       templateId: Number(process.env.BREVO_TEMPLATE_APPROVED),
-      params: { FIRSTNAME: first || 'there', PORTAL_URL: `${site}/portal.html` },
+      params: { FIRSTNAME: first || 'there', PORTAL_URL: `${site}/portal.html`, MEMBERSHIP_ID: clean(record.membership_id, 40) },
     }));
     if (process.env.BREVO_LIST_MEMBERS) {
       tasks.push(brevo('/contacts', {
