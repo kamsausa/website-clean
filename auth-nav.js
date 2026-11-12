@@ -1,3 +1,10 @@
+// Adds account links (Member Login / Member Portal / Admin / Log out) to the
+// main navigation on the public pages.
+//
+// Several things can ask for a redraw at nearly the same moment (page load, the
+// sign-in state event, the page re-rendering its header). Each redraw builds its
+// links first and then swaps them in one step, and only the newest redraw is
+// allowed to finish, so links can never be added twice.
 (function () {
   'use strict';
 
@@ -12,20 +19,21 @@
   const LOGIN_HREF = './signup.html?mode=login';
   const HOME_HREF = './index.html';
 
+  let latestRender = 0;
+  let cached = null; // { signedIn, isAdmin }
+
+  function baseStyle(color) {
+    return [
+      'font-size:12.5px', 'font-weight:700', 'letter-spacing:.09em', 'text-transform:uppercase',
+      'white-space:nowrap', 'text-decoration:none', 'color:' + color,
+    ].join(';');
+  }
+
   function makeLink(text, href, emphasis) {
     const a = document.createElement('a');
     a.href = href;
     a.textContent = text;
-    a.dataset.kamsaAuthNav = text.toLowerCase().replace(/\s+/g, '-');
-    a.style.cssText = [
-      'font-size:12.5px',
-      'font-weight:700',
-      'letter-spacing:.09em',
-      'text-transform:uppercase',
-      'white-space:nowrap',
-      'text-decoration:none',
-      emphasis ? 'color:#c8102e' : 'color:#26405f'
-    ].join(';');
+    a.style.cssText = baseStyle(emphasis ? '#c8102e' : '#26405f');
     return a;
   }
 
@@ -33,20 +41,7 @@
     const button = document.createElement('button');
     button.type = 'button';
     button.textContent = 'Log out';
-    button.dataset.kamsaAuthNav = 'logout';
-    button.style.cssText = [
-      'border:0',
-      'background:transparent',
-      'padding:0',
-      'font:inherit',
-      'font-size:12.5px',
-      'font-weight:700',
-      'letter-spacing:.09em',
-      'text-transform:uppercase',
-      'white-space:nowrap',
-      'color:#26405f',
-      'cursor:pointer'
-    ].join(';');
+    button.style.cssText = baseStyle('#26405f') + ';border:0;background:transparent;padding:0;font-family:inherit;cursor:pointer';
     button.addEventListener('click', async function () {
       button.disabled = true;
       const { error } = await supabaseClient.auth.signOut();
@@ -64,32 +59,39 @@
     return document.querySelector('nav[aria-label="Primary"]');
   }
 
+  // Put the account links into the nav as ONE group, replacing any earlier group.
+  function place(state) {
+    const nav = findNav();
+    if (!nav) return;
+
+    const group = document.createElement('span');
+    group.dataset.kamsaAuthNav = 'group';
+    group.style.cssText = 'display:inline-flex;align-items:center;gap:14px 18px;flex-wrap:wrap';
+
+    if (!state.signedIn) {
+      group.append(makeLink('Member Login', LOGIN_HREF, true));
+    } else {
+      group.append(makeLink('Member Portal', PORTAL_HREF, false));
+      if (state.isAdmin) group.append(makeLink('Admin', ADMIN_HREF, true));
+      group.append(makeLogout());
+    }
+
+    nav.querySelectorAll('[data-kamsa-auth-nav]').forEach((el) => el.remove());
+    nav.appendChild(group);
+  }
+
   async function renderNav() {
+    const ticket = ++latestRender;
     try {
-      const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
-      if (authError) {
-        console.error('KAMSA auth lookup failed:', authError);
-        return;
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      let state = { signedIn: Boolean(session), isAdmin: false };
+      if (session) {
+        const { data: isAdmin, error } = await supabaseClient.rpc('is_admin');
+        state.isAdmin = !error && isAdmin === true;
       }
-
-      const nav = findNav();
-      if (!nav) return;
-
-      nav.querySelectorAll('[data-kamsa-auth-nav]').forEach(el => el.remove());
-
-      if (!user) {
-        nav.appendChild(makeLink('Member Login', LOGIN_HREF, true));
-        return;
-      }
-
-      nav.appendChild(makeLink('Member Portal', PORTAL_HREF, false));
-
-      const { data: isAdmin, error: adminError } = await supabaseClient.rpc('is_admin');
-      if (!adminError && isAdmin === true) {
-        nav.appendChild(makeLink('Admin', ADMIN_HREF, true));
-      }
-
-      nav.appendChild(makeLogout());
+      if (ticket !== latestRender) return; // a newer redraw started; let it win
+      cached = state;
+      place(state);
     } catch (error) {
       console.error('KAMSA auth navigation error:', error);
     }
@@ -97,16 +99,19 @@
 
   function start() {
     renderNav();
+
+    // If the page re-renders its header and drops our links, put the last known
+    // links back right away (no network call, no duplicates).
     const observer = new MutationObserver(function () {
       const nav = findNav();
-      if (nav && !nav.querySelector('[data-kamsa-auth-nav]')) {
-        renderNav();
-      }
+      if (cached && nav && !nav.querySelector('[data-kamsa-auth-nav]')) place(cached);
     });
     observer.observe(document.body, { childList: true, subtree: true });
 
-    supabaseClient.auth.onAuthStateChange(function () {
-      window.setTimeout(renderNav, 0);
+    supabaseClient.auth.onAuthStateChange(function (event) {
+      if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'USER_UPDATED') {
+        window.setTimeout(renderNav, 0);
+      }
     });
   }
 

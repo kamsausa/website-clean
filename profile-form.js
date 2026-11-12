@@ -13,6 +13,7 @@
 
   const TEMPLATE = `
     <div class="stack">
+      <p class="hint" style="margin:0">All fields are required unless marked optional.</p>
       <div class="row2">
         <label class="field">
           <span class="field-label">First name</span>

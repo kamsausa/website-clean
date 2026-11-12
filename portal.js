@@ -206,6 +206,7 @@
     $('#loading').hidden = true;
     $('#openProfile').hidden = false;
     $('#adminLink').hidden = !state.isAdmin;
+    $$('[data-membership-id]').forEach((n) => { n.textContent = m.membership_id || 'being assigned'; });
 
     const showMembers = state.stage === 'active' || state.isAdmin;
     $('#memberArea').hidden = !showMembers;
