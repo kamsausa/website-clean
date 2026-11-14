@@ -215,6 +215,12 @@ legend { padding: 0; margin: 0 0 10px; }
 .code-row { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
 .code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 15px; font-weight: 700; padding: 6px 12px; border-radius: 8px; background: rgba(11, 37, 69, .07); color: var(--navy); }
 .empty { grid-column: 1 / -1; margin: 12px 0 0; color: var(--muted); }
+.resource-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; }
+.resource-card { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 18px 32px; padding: 32px 36px; border-radius: 22px; color: #fff; background: radial-gradient(120% 140% at 100% 100%, rgba(200,16,46,.55) 0%, rgba(200,16,46,0) 55%), linear-gradient(150deg, #0b2545 0%, #12305a 100%); box-shadow: 0 26px 60px -40px rgba(11,37,69,.9); }
+.resource-card h3 { margin: 0 0 10px; font-size: 22px; font-weight: 800; letter-spacing: -.01em; }
+.resource-card > div { flex: 1 1 340px; }
+.resource-card p { margin: 0; max-width: 56ch; font-size: 15.5px; line-height: 1.6; color: rgba(255,255,255,.82); }
+.resource-card .btn-primary { box-shadow: none; }
 
 /* Modal */
 dialog.modal { width: min(760px, calc(100% - 32px)); max-height: 90vh; padding: 0; border: 0; border-radius: 24px; box-shadow: 0 30px 90px rgba(11, 37, 69, .28); }
