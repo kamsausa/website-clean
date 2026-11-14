@@ -28,7 +28,7 @@ revoke all on public.member_resources from anon;
 insert into public.member_resources (title, description, url, link_label, sort_order) values (
   'KAMSA Opportunities Database',
   'Scholarships, research programs, mentorship, volunteering, and member discounts collected by KAMSA members, with deadlines and eligibility in one place.',
-  'https://docs.google.com/spreadsheets/d/1-5aksn2l3YZluYb7HoU0pGEUJeyjVHZ5x6ADs3Vl17U/edit',
+  'https://docs.google.com/spreadsheets/d/1fItskALhqwrv9acenSP_Jrw7S4Y91zlzn7KEE8Yin5M/edit',
   'Open the Opportunities Database',
   10
 ) on conflict (title) do update set url = excluded.url, description = excluded.description, link_label = excluded.link_label;
