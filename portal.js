@@ -1,5 +1,5 @@
 // portal.html — member portal. Shows the right view for the member's stage:
-// pending review, inactive, or the full directory + perks for active members.
+// pending review, inactive, or resources, a link to the directory, and perks for active members.
 // Access is enforced by the database; this page only decides what to display.
 (function () {
   'use strict';
@@ -9,113 +9,9 @@
   const msg = $('#message');
 
   let state = null;
-  let allRows = [];
-  let avatarUrls = {};
-  let filtersBound = false;
 
   $('#logout').addEventListener('click', K.signOut);
   sb.auth.onAuthStateChange((event) => { if (event === 'SIGNED_OUT') K.go(K.PAGES.login); });
-
-  // ---------------------------------------------------------------------------
-  // Directory
-  // ---------------------------------------------------------------------------
-  const FILTERS = [
-    { id: 'fStatus', key: 'current_status', all: 'All statuses' },
-    { id: 'fChapter', key: 'regional_chapter', all: 'All chapters' },
-    { id: 'fSchool', key: 'school_institution', all: 'All schools' },
-    { id: 'fSpecialty', key: 'specialty_interest', all: 'All specialties' },
-  ];
-
-  function buildFilters(rows) {
-    FILTERS.forEach(({ id, key, all }) => {
-      const values = new Set();
-      rows.forEach((r) => {
-        const v = r[key];
-        (Array.isArray(v) ? v : [v]).forEach((x) => { if (x) values.add(String(x)); });
-      });
-      const select = $('#' + id);
-      select.replaceChildren(el('option', { value: '' }, all),
-        ...Array.from(values).sort((a, b) => a.localeCompare(b)).map((v) => el('option', { value: v }, v)));
-      if (!filtersBound) select.addEventListener('change', applyFilters);
-    });
-    if (filtersBound) return;
-    filtersBound = true;
-    $('#fSearch').addEventListener('input', applyFilters);
-    $('#clearFilters').addEventListener('click', () => {
-      FILTERS.forEach(({ id }) => { $('#' + id).value = ''; });
-      $('#fSearch').value = '';
-      applyFilters();
-    });
-  }
-
-  function applyFilters() {
-    const q = $('#fSearch').value.trim().toLowerCase();
-    const active = FILTERS.map(({ id, key }) => ({ key, value: $('#' + id).value })).filter((f) => f.value);
-    const rows = allRows.filter((r) => {
-      if (q) {
-        const hay = `${r.first_name || ''} ${r.last_name || ''} ${r.school_institution || ''}`.toLowerCase();
-        if (!hay.includes(q)) return false;
-      }
-      return active.every(({ key, value }) => {
-        const v = r[key];
-        return Array.isArray(v) ? v.map(String).includes(value) : String(v || '') === value;
-      });
-    });
-    $('#clearFilters').hidden = !(q || active.length);
-    renderDirectory(rows);
-  }
-
-  function memberCard(m) {
-    const name = [m.first_name, m.last_name].filter(Boolean).join(' ') || 'KAMSA member';
-    const avatar = el('div', { class: 'avatar', 'aria-hidden': 'true' });
-    const url = m.profile_image_path && avatarUrls[m.profile_image_path];
-    if (url) avatar.append(el('img', { src: url, alt: '', loading: 'lazy' }));
-    else avatar.append(K.initials(m.first_name, m.last_name));
-
-    const meta = [m.graduation_year ? `Class of ${m.graduation_year}` : '', m.regional_chapter || ''].filter(Boolean).join(' · ');
-    const specs = Array.isArray(m.specialty_interest) ? m.specialty_interest.join(', ') : '';
-    const links = el('div', { class: 'links' });
-    if (m.email) links.append(el('a', { href: 'mailto:' + encodeURIComponent(m.email).replace(/%40/g, '@') }, 'Email'));
-    const li = K.safeHttpsUrl(m.linkedin_profile);
-    if (li && /(^|\.)linkedin\.com$/i.test(new URL(li).hostname)) {
-      links.append(el('a', { href: li, target: '_blank', rel: 'noopener noreferrer' }, 'LinkedIn ↗'));
-    }
-
-    return el('article', { class: 'member-card' },
-      el('div', { class: 'top' }, avatar,
-        el('div', {}, el('h3', {}, name),
-          m.current_status ? el('span', { class: 'badge' }, m.current_status) : null)),
-      m.school_institution ? el('small', {}, m.school_institution) : null,
-      meta ? el('small', {}, meta) : null,
-      m.regional_chapter_role ? el('small', {}, `Chapter role: ${m.regional_chapter_role}`) : null,
-      specs ? el('small', { class: 'spec' }, specs) : null,
-      links.childNodes.length ? links : null);
-  }
-
-  function renderDirectory(rows) {
-    const grid = $('#dirGrid');
-    grid.replaceChildren(...rows.map(memberCard));
-    if (!rows.length) {
-      grid.append(el('p', { class: 'empty' }, allRows.length
-        ? 'No members match these filters.'
-        : 'No one is listed in the directory yet. Be the first — turn on your listing under My profile.'));
-    }
-    $('#dirCount').textContent = `${rows.length} member${rows.length === 1 ? '' : 's'} shown`;
-  }
-
-  async function loadDirectory() {
-    $('#dirGrid').replaceChildren(el('div', { class: 'loading' }, el('span', { class: 'spinner', 'aria-hidden': 'true' }), 'Loading members…'));
-    const { data, error } = await sb.rpc('get_member_directory');
-    if (error) {
-      $('#dirGrid').replaceChildren(el('p', { class: 'empty' }, 'We could not load the directory right now. Please refresh the page.'));
-      console.error('KAMSA directory error:', error);
-      return;
-    }
-    allRows = Array.isArray(data) ? data : [];
-    avatarUrls = await K.signedAvatarUrls(allRows.map((r) => r.profile_image_path));
-    buildFilters(allRows);
-    applyFilters();
-  }
 
   // ---------------------------------------------------------------------------
   // Member resources (links stored in the database; only active members can read them)
@@ -214,7 +110,6 @@
       K.setBusy(btn, false);
       K.showMessage(pmsg, 'Your profile has been updated.', 'success');
       renderStage();
-      if (state.stage === 'active') loadDirectory();
       setTimeout(closeProfile, 800);
     } catch (err) {
       K.setBusy(btn, false);
@@ -267,8 +162,13 @@
       return K.showMessage(msg, K.friendlyError(state.error, 'We could not load your account. Please refresh the page.'), 'error');
     }
     renderStage();
+    // directory.html sends people here with ?profile=1 to change their listing.
+    if (new URLSearchParams(location.search).get('profile') === '1') {
+      history.replaceState(null, '', location.pathname);
+      openProfile();
+    }
     if (state.stage === 'active' || state.isAdmin) {
-      await Promise.all([loadResources(), loadDirectory(), loadPerks()]);
+      await Promise.all([loadResources(), loadPerks()]);
     }
   })().catch((err) => {
     $('#loading').hidden = true;

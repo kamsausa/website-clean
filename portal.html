@@ -71,7 +71,7 @@
     <section style="margin-bottom:56px">
       <p class="kicker">Members only</p>
       <h1 class="title" id="welcome">Member Portal</h1>
-      <p class="lede" style="margin:0 0 14px">Find KAMSA members by school, chapter, or specialty, and use member-only partner perks.</p>
+      <p class="lede" style="margin:0 0 14px">Member resources, the membership directory, and member-only partner perks.</p>
       <p class="small muted" style="margin:0">Membership ID: <span class="email-pill" data-membership-id></span></p>
     </section>
 
@@ -83,21 +83,11 @@
 
     <section aria-labelledby="dirTitle" style="margin-bottom:64px">
       <h2 class="section-title" id="dirTitle">Membership directory</h2>
-      <p class="lede" style="margin-bottom:22px">Only approved members who opted in are listed. <button type="button" class="btn-link" data-open-profile>Change your listing</button></p>
-
-      <div class="filters" role="search">
-        <label class="search"><span class="sr-only">Search by name or school</span>
-          <input type="search" id="fSearch" placeholder="Search by name or school"></label>
-        <label><span class="sr-only">Status</span><select id="fStatus"></select></label>
-        <label><span class="sr-only">Regional chapter</span><select id="fChapter"></select></label>
-        <label><span class="sr-only">School</span><select id="fSchool"></select></label>
-        <label><span class="sr-only">Specialty interest</span><select id="fSpecialty"></select></label>
-      </div>
-      <div class="dir-meta">
-        <span class="dir-count" id="dirCount" aria-live="polite"></span>
-        <button type="button" class="btn btn-secondary btn-small" id="clearFilters" hidden>Clear filters</button>
-      </div>
-      <div class="dir-grid" id="dirGrid"></div>
+      <a class="dir-link-card" href="directory.html">
+        <span><strong>Find KAMSA members</strong>Search approved members by name, school, chapter, or specialty.</span>
+        <span class="btn btn-secondary">Open the directory →</span>
+      </a>
+      <p class="small muted" style="margin:14px 0 0">Want to be listed? <button type="button" class="btn-link" data-open-profile>Change your listing</button></p>
     </section>
 
     <section aria-labelledby="perkTitle">
