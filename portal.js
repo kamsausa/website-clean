@@ -118,6 +118,30 @@
   }
 
   // ---------------------------------------------------------------------------
+  // Member resources (links stored in the database; only active members can read them)
+  // ---------------------------------------------------------------------------
+  async function loadResources() {
+    const grid = $('#resourceGrid');
+    const { data, error } = await sb.from('member_resources')
+      .select('title, description, url, link_label')
+      .eq('is_active', true)
+      .order('sort_order', { ascending: true });
+    if (error) {
+      grid.replaceChildren(el('p', { class: 'empty' }, 'We could not load member resources right now. Please refresh the page.'));
+      return;
+    }
+    const items = (data || []).filter((r) => K.safeHttpsUrl(r.url));
+    if (!items.length) {
+      $('#resourcesSection').hidden = true;
+      return;
+    }
+    grid.replaceChildren(...items.map((r) => el('article', { class: 'resource-card' },
+      el('div', {}, el('h3', {}, r.title), el('p', {}, r.description)),
+      el('a', { class: 'btn btn-primary', href: K.safeHttpsUrl(r.url), target: '_blank', rel: 'noopener noreferrer' },
+        (r.link_label || 'Open') + ' ↗'))));
+  }
+
+  // ---------------------------------------------------------------------------
   // Perks (stored in the database; only active members can read them)
   // ---------------------------------------------------------------------------
   async function loadPerks() {
@@ -244,7 +268,7 @@
     }
     renderStage();
     if (state.stage === 'active' || state.isAdmin) {
-      await Promise.all([loadDirectory(), loadPerks()]);
+      await Promise.all([loadResources(), loadDirectory(), loadPerks()]);
     }
   })().catch((err) => {
     $('#loading').hidden = true;
