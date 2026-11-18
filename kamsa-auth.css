@@ -248,3 +248,9 @@ dialog.modal::backdrop { background: rgba(11, 37, 69, .42); }
 @media (prefers-reduced-motion: reduce) {
   .btn .spinner, .loading .spinner { animation-duration: 2s; }
 }
+
+/* Portal: link card to the separate membership directory page */
+.dir-link-card { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px 28px; padding: 26px 30px; border-radius: 20px; background: linear-gradient(150deg, #ffffff 0%, #eef2f9 100%); box-shadow: 0 18px 44px -34px rgba(11,37,69,.6); color: var(--text); text-decoration: none; transition: box-shadow .15s ease; }
+.dir-link-card:hover { box-shadow: 0 22px 50px -30px rgba(29,74,128,.6); }
+.dir-link-card > span:first-child { flex: 1 1 300px; font-size: 15.5px; line-height: 1.6; color: var(--soft); }
+.dir-link-card strong { display: block; margin-bottom: 4px; font-size: 19px; font-weight: 800; color: var(--navy, #0b2545); }

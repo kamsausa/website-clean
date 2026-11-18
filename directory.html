@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://*.supabase.co; connect-src 'self' https://*.supabase.co wss://*.supabase.co; base-uri 'self'; form-action 'self'; object-src 'none'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<meta name="robots" content="noindex">
+<meta name="description" content="KAMSA membership directory — members only.">
+<meta name="theme-color" content="#0b2545">
+<title>Membership Directory | KAMSA</title>
+<link rel="icon" href="kamsa-logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="kamsa-auth.css">
+<script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js" integrity="sha384-BWcjm9OdFth9TbhCxZPdm+gAOUMAzQy9nmTs12ioXdCcbVnJaPMn+fMUoQCLt60R" crossorigin="anonymous"></script>
+<script defer src="supabase.js"></script>
+<script defer src="kamsa-auth.js"></script>
+<script defer src="directory.js"></script>
+</head>
+<body>
+<header class="site-header">
+  <a class="logo" href="index.html" aria-label="KAMSA home"><img src="kamsa-logo.png" alt="KAMSA"></a>
+  <nav class="site-nav" aria-label="Account">
+    <a href="index.html">KAMSA home</a>
+    <a href="portal.html">Member portal</a>
+    <a href="admin.html" id="adminLink" class="nav-strong" hidden>Admin</a>
+    <button type="button" id="logout">Log out</button>
+  </nav>
+</header>
+
+<main class="wrap wide" id="main">
+  <div id="message" class="message" hidden></div>
+  <div class="loading" id="loading"><span class="spinner" aria-hidden="true"></span>Loading the directory…</div>
+
+  <div id="memberArea" hidden>
+    <section aria-labelledby="dirTitle" style="margin-bottom:64px">
+      <p class="kicker"><a href="portal.html">← Member portal</a></p>
+      <h1 class="title" id="dirTitle">Membership directory</h1>
+      <p class="lede" style="margin-bottom:22px">Only approved members who opted in are listed. <a class="btn-link" href="portal.html?profile=1">Change your listing</a></p>
+
+      <div class="filters" role="search">
+        <label class="search"><span class="sr-only">Search by name or school</span>
+          <input type="search" id="fSearch" placeholder="Search by name or school"></label>
+        <label><span class="sr-only">Status</span><select id="fStatus"></select></label>
+        <label><span class="sr-only">Regional chapter</span><select id="fChapter"></select></label>
+        <label><span class="sr-only">School</span><select id="fSchool"></select></label>
+        <label><span class="sr-only">Specialty interest</span><select id="fSpecialty"></select></label>
+      </div>
+      <div class="dir-meta">
+        <span class="dir-count" id="dirCount" aria-live="polite"></span>
+        <button type="button" class="btn btn-secondary btn-small" id="clearFilters" hidden>Clear filters</button>
+      </div>
+      <div class="dir-grid" id="dirGrid"></div>
+    </section>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <small>© 2026 Korean American Medical Student Association</small>
+  <small><a href="privacy.html">Privacy</a> · <a href="mailto:kamsa.usa@gmail.com">kamsa.usa@gmail.com</a></small>
+</footer>
+</body>
+</html>

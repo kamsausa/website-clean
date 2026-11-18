@@ -13,7 +13,7 @@
       ]
     },
     {
-      "source": "/(signup|verify|onboarding|portal)(.html)?",
+      "source": "/(signup|verify|onboarding|portal|directory|admin)(.html)?",
       "headers": [
         { "key": "Cache-Control", "value": "no-store" },
         { "key": "X-Robots-Tag", "value": "noindex" }
