@@ -9,8 +9,8 @@
 
   const COPY = {
     login: ['Member login', 'Welcome back', 'Log in to reach the member directory and partner perks.'],
-    signup: ['New member', 'Join KAMSA', 'Membership is free. Create your account, confirm your email, then set up your profile.'],
-    'check-email': ['Almost there', 'Check your email', 'One quick step before you set up your profile.'],
+    signup: ['New member', 'Apply to join KAMSA', 'Membership is free. Fill out the application below, confirm your email, and the national board will review it.'],
+    'check-email': ['Almost there', 'Check your email', 'One last step: confirm your email to submit your application.'],
     forgot: ['Account help', 'Reset your password', "Enter the email you signed up with and we'll send you a link to choose a new password."],
     reset: ['Account help', 'Choose a new password', `Use at least ${K.CONFIG.minPasswordLength || 10} characters, with a letter and a number.`],
   };
@@ -22,6 +22,15 @@
   const msg = $('#message');
   let mode = null;
 
+  // The full membership application lives on the sign-up form, so an account is only
+  // created once everything is filled in.
+  let profile = null;
+  function mountApplication() {
+    profile = K.ProfileForm.mount($('#signupProfile'), { signup: true });
+    profile.onError = (text) => K.showMessage(msg, text, 'error');
+  }
+  mountApplication();
+
   function pendingEmail(v) {
     try {
       if (v === undefined) return sessionStorage.getItem(PENDING_KEY) || '';
@@ -32,6 +41,7 @@
 
   function setMode(next, { keepMessage = false, focus = true } = {}) {
     if (!COPY[next]) next = 'signup';
+    if (next === 'review') next = 'signup';
     mode = next;
     const [kicker, heading, intro] = COPY[next];
     $('#kicker').textContent = kicker;
@@ -47,7 +57,7 @@
     const step = STEP_FOR_MODE[next];
     $('#steps').hidden = !step;
     if (step) {
-      const order = ['account', 'email', 'profile', 'review'];
+      const order = ['account', 'email', 'review'];
       $$('#steps li').forEach((li) => {
         const i = order.indexOf(li.dataset.step);
         const cur = order.indexOf(step);
@@ -155,25 +165,27 @@
     K.clearInvalid();
     K.showMessage(msg, '');
 
-    const first = $('#firstName').value.trim();
-    const last = $('#lastName').value.trim();
     const email = K.normalizeEmail($('#signupEmail').value);
     const pw = $('#signupPassword').value;
     const pw2 = $('#signupPasswordConfirm').value;
 
-    let ok = true;
+    // Check the application first, then the login details.
+    const profileOk = profile.validate();
+    let ok = profileOk;
     const bad = (sel, text) => { if (ok) $(sel).focus(); ok = false; K.markInvalid($(sel), text); };
-    if (!first) bad('#firstName', 'Please enter your first name.');
-    if (!last) bad('#lastName', 'Please enter your last name.');
     if (!K.isEmail(email)) bad('#signupEmail', 'Please enter a valid email address.');
     const problem = K.passwordProblem(pw);
     if (problem) bad('#signupPassword', problem);
     else if (pw !== pw2) bad('#signupPasswordConfirm', "Passwords don't match.");
     if (!$('#terms').checked) bad('#terms', 'Please agree to continue.');
-    if (!ok) return;
+    if (!ok) {
+      K.showMessage(msg, 'A few fields need your attention.', 'error');
+      return;
+    }
+    const application = profile.values();
 
     const btn = $('#signupButton');
-    K.setBusy(btn, true, 'Creating account…');
+    K.setBusy(btn, true, 'Submitting…');
     let cap;
     try {
       cap = captchaFor(e.currentTarget);
@@ -183,8 +195,13 @@
         options: {
           emailRedirectTo: K.pageUrl(K.PAGES.verify),
           captchaToken: cap.token,
-          // Only the name and the terms flag are read by the database trigger.
-          data: { first_name: first, last_name: last, terms_accepted: true },
+          // The database only creates the account if this application is complete and valid.
+          data: {
+            first_name: application.first_name,
+            last_name: application.last_name,
+            terms_accepted: true,
+            profile: application,
+          },
         },
       });
       if (error) throw error;
@@ -192,12 +209,13 @@
       // If "Confirm email" is turned off in Supabase, a session comes back right away.
       if (data.session) {
         console.warn('KAMSA: email confirmation is disabled in Supabase. Turn on Authentication → Providers → Email → Confirm email.');
-        K.go(K.PAGES.onboarding);
+        K.go(K.PAGES.portal);
         return;
       }
 
       pendingEmail(email);
       $('#signupForm').reset();
+      mountApplication(); // clear the application from the page
       $('#pwMeter').dataset.score = '0';
       K.setBusy(btn, false);
       setMode('check-email');
@@ -208,7 +226,7 @@
       const actions = (err.code === 'user_already_exists' || err.code === 'email_exists')
         ? [{ label: 'Log in instead', onClick: () => { $('#loginEmail').value = email; setMode('login'); } }]
         : [];
-      K.showMessage(msg, K.friendlyError(err, 'We could not create your account. Please try again.'), 'error', actions);
+      K.showMessage(msg, K.friendlyError(err, 'We could not submit your application. Please check every field and try again.'), 'error', actions);
     }
   });
 

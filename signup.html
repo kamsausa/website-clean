@@ -17,6 +17,7 @@
 <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js" integrity="sha384-BWcjm9OdFth9TbhCxZPdm+gAOUMAzQy9nmTs12ioXdCcbVnJaPMn+fMUoQCLt60R" crossorigin="anonymous"></script>
 <script defer src="supabase.js"></script>
 <script defer src="kamsa-auth.js"></script>
+<script defer src="profile-form.js"></script>
 <script defer src="signup.js"></script>
 </head>
 <body>
@@ -34,9 +35,8 @@
   <p class="lede" id="intro">Membership is free.</p>
 
   <ol class="steps" id="steps" aria-label="Sign-up progress" hidden>
-    <li data-step="account">Create account</li>
+    <li data-step="account">Apply</li>
     <li data-step="email">Confirm email</li>
-    <li data-step="profile">Set up profile</li>
     <li data-step="review">Board review</li>
   </ol>
 
@@ -70,16 +70,10 @@
 
   <!-- SIGN UP -->
   <form id="signupForm" class="stack" novalidate hidden aria-labelledby="tab-signup">
-    <div class="row2">
-      <label class="field">
-        <span class="field-label">First name</span>
-        <input id="firstName" type="text" autocomplete="given-name" maxlength="80" required>
-      </label>
-      <label class="field">
-        <span class="field-label">Last name</span>
-        <input id="lastName" type="text" autocomplete="family-name" maxlength="80" required>
-      </label>
-    </div>
+    <h2 class="form-section">About you</h2>
+    <div id="signupProfile"></div>
+
+    <h2 class="form-section">Your login</h2>
     <label class="field">
       <span class="field-label">Email</span>
       <input id="signupEmail" type="email" autocomplete="email" inputmode="email" maxlength="254" required>
@@ -107,9 +101,9 @@
     </label>
     <div data-captcha></div>
     <div class="actions">
-      <button id="signupButton" type="submit" class="btn btn-primary">Create account</button>
+      <button id="signupButton" type="submit" class="btn btn-primary">Submit application</button>
     </div>
-    <p class="small muted" style="margin:0">Next, you'll confirm your email and set up your profile. It takes about three minutes.</p>
+    <p class="small muted" style="margin:0">Next, confirm your email. Your application goes to the national board as soon as you do.</p>
   </form>
 
   <!-- CHECK EMAIL -->
@@ -118,7 +112,7 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="3"/><path d="m3 7 8.2 5.6a1.5 1.5 0 0 0 1.6 0L21 7"/></svg>
     </div>
     <p style="margin:0 0 6px;font-size:17px;line-height:1.6;color:var(--text)">We sent a confirmation link to <span class="email-pill" id="pendingEmail">your email</span>.</p>
-    <p style="margin:0 0 22px;font-size:15.5px;line-height:1.6;color:var(--soft)">Open it and press <strong>Confirm my email</strong>. You'll go straight to setting up your profile. You can open the link on any device.</p>
+    <p style="margin:0 0 22px;font-size:15.5px;line-height:1.6;color:var(--soft)">Open it and press <strong>Confirm my email</strong> to send your application to the national board. Your account isn't active until you do. You can open the link on any device.</p>
     <div data-captcha></div>
     <div class="actions">
       <button type="button" class="btn btn-secondary" id="resendButton">Resend email</button>
