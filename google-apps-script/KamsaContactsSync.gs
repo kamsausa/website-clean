@@ -3,7 +3,9 @@
  *
  * Runs inside the kamsa.usa@gmail.com Google account. The KAMSA membership database
  * calls this web app to keep the "Active KAMSA Members" contact label up to date:
- *   - a member is approved or renews   → added to the label (contact created if needed)
+ *   - a member is approved or renews   → added to the label (contact created if needed;
+ *                                        an existing contact gets any blank name, school,
+ *                                        status or membership ID filled in, never overwritten)
  *   - a member lapses or is deactivated → removed from the label (the contact itself is kept)
  *   - once a night, a full sync         → the label matches the active member list exactly
  *
@@ -13,6 +15,9 @@
  *   3. Run the `setup` function once and approve the permissions it asks for.
  *   4. Deploy → New deployment → type "Web app" → Execute as: Me → Who has access: Anyone → Deploy.
  *   5. Copy the Web app URL (ends in /exec) and send it to whoever manages the website.
+ *
+ * Updating this code later: paste the new version, then Deploy → Manage deployments → edit (pencil)
+ * → Version: New version → Deploy. That keeps the same URL.
  */
 
 const SECRET = 'PASTE_THE_SHARED_SECRET_HERE';
@@ -70,6 +75,7 @@ function addMembers_(group, members) {
   const index = contactIndex_();
   const toLabel = [];
   const toCreate = [];
+  const toFill = {};
   const seen = {};
   members.forEach((m) => {
     const email = m.email.trim().toLowerCase();
@@ -78,6 +84,8 @@ function addMembers_(group, members) {
     const existing = index[email];
     if (existing) {
       if (existing.groups.indexOf(group) === -1) toLabel.push(existing.resourceName);
+      const patch = fillBlanks_(existing.person, m);
+      if (patch) toFill[existing.resourceName] = patch;
     } else {
       toCreate.push(m);
     }
@@ -94,7 +102,69 @@ function addMembers_(group, members) {
   for (let i = 0; i < toLabel.length; i += 1000) {
     People.ContactGroups.Members.modify({ resourceNamesToAdd: toLabel.slice(i, i + 1000) }, group);
   }
-  return { ok: true, created: created, labeled: toLabel.length };
+  // Fill blanks on existing contacts. Only the fields that changed are sent.
+  const fillNames = Object.keys(toFill);
+  fillNames.forEach((rn) => {
+    People.People.updateContact(toFill[rn].person, rn, { updatePersonFields: toFill[rn].fields.join(',') });
+  });
+  return { ok: true, created: created, labeled: toLabel.length, filled: fillNames.length };
+}
+
+/**
+ * For a contact that already exists, fill in only what's blank. Returns null when there is
+ * nothing to add. Fields that already have something are sent back unchanged.
+ */
+function fillBlanks_(p, m) {
+  const first = clean_(m.first_name, 80);
+  const last = clean_(m.last_name, 80);
+  const school = clean_(m.school, 160);
+  const status = clean_(m.status, 60);
+  const id = clean_(m.membership_id, 20);
+  let changed = false;
+  const fields = [];
+  const person = { etag: p.etag };
+
+  // Names: add a missing first or last name; leave any existing name as it is.
+  const names = (p.names || []).map((n) => keep_(n, ['givenName', 'familyName', 'middleName', 'honorificPrefix', 'honorificSuffix', 'phoneticGivenName', 'phoneticFamilyName', 'unstructuredName']));
+  if (!names.length) {
+    if (first || last) { names.push({ givenName: first || undefined, familyName: last || undefined }); changed = true; }
+  } else {
+    const n = names[0];
+    const hasStructured = n.givenName || n.familyName;
+    if (!hasStructured && !n.unstructuredName && (first || last)) {
+      n.givenName = first || undefined; n.familyName = last || undefined; changed = true;
+    } else if (hasStructured) {
+      if (!n.givenName && first) { n.givenName = first; changed = true; }
+      if (!n.familyName && last) { n.familyName = last; changed = true; }
+    }
+    if (changed) delete n.unstructuredName; // let Google rebuild the display name
+  }
+  if (changed) { person.names = names; fields.push('names'); changed = false; }
+
+  // School and status: fill the first organization's blanks, or add one.
+  const orgs = (p.organizations || []).map((o) => keep_(o, ['name', 'title', 'department', 'type', 'jobDescription', 'symbol', 'domain', 'location', 'costCenter', 'fullTimeEquivalentMillipercent', 'phoneticName', 'startDate', 'endDate', 'current']));
+  if (!orgs.length) {
+    if (school || status) { orgs.push({ name: school || undefined, title: status || undefined }); changed = true; }
+  } else {
+    if (!orgs[0].name && school) { orgs[0].name = school; changed = true; }
+    if (!orgs[0].title && status) { orgs[0].title = status; changed = true; }
+  }
+  if (changed) { person.organizations = orgs; fields.push('organizations'); changed = false; }
+
+  // Membership ID as a custom field, if it isn't there yet.
+  const custom = (p.userDefined || []).map((u) => keep_(u, ['key', 'value']));
+  if (id && !custom.some((u) => u.key === 'KAMSA membership ID')) {
+    custom.push({ key: 'KAMSA membership ID', value: id });
+    person.userDefined = custom; fields.push('userDefined');
+  }
+
+  return fields.length ? { person: person, fields: fields } : null;
+}
+
+function keep_(obj, keys) {
+  const out = {};
+  keys.forEach((k) => { if (obj[k] !== undefined && obj[k] !== null && obj[k] !== '') out[k] = obj[k]; });
+  return out;
 }
 
 /** Take people off the label. Their contact stays in Google Contacts. */
@@ -132,7 +202,7 @@ function sync_(group, members) {
   for (let i = 0; i < names.length; i += 1000) {
     People.ContactGroups.Members.modify({ resourceNamesToRemove: names.slice(i, i + 1000) }, group);
   }
-  return { ok: true, created: added.created, labeled: added.labeled, removed: names.length, active: Object.keys(active).length };
+  return { ok: true, created: added.created, labeled: added.labeled, filled: added.filled, removed: names.length, active: Object.keys(active).length };
 }
 
 // ---------------------------------------------------------------------------
@@ -158,7 +228,7 @@ function contactIndex_() {
   let pageToken;
   do {
     const page = People.People.Connections.list('people/me', {
-      personFields: 'emailAddresses,memberships',
+      personFields: 'emailAddresses,memberships,names,organizations,userDefined',
       pageSize: 1000,
       pageToken: pageToken,
     });
@@ -167,7 +237,7 @@ function contactIndex_() {
       const groups = (p.memberships || [])
         .map((x) => x.contactGroupMembership && x.contactGroupMembership.contactGroupResourceName)
         .filter(Boolean);
-      const entry = { resourceName: p.resourceName, emails: emails, groups: groups };
+      const entry = { resourceName: p.resourceName, emails: emails, groups: groups, person: p };
       emails.forEach((e) => { if (!index[e]) index[e] = entry; });
     });
     pageToken = page.nextPageToken;
