@@ -25,7 +25,7 @@ begin
     url := v_url,
     body := p_payload || jsonb_build_object('secret', v_secret),
     headers := '{"Content-Type": "application/json"}'::jsonb,
-    timeout_milliseconds := 30000
+    timeout_milliseconds := 180000
   );
 end $$;
 
