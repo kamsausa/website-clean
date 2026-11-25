@@ -254,3 +254,7 @@ dialog.modal::backdrop { background: rgba(11, 37, 69, .42); }
 .dir-link-card:hover { box-shadow: 0 22px 50px -30px rgba(29,74,128,.6); }
 .dir-link-card > span:first-child { flex: 1 1 300px; font-size: 15.5px; line-height: 1.6; color: var(--soft); }
 .dir-link-card strong { display: block; margin-bottom: 4px; font-size: 19px; font-weight: 800; color: var(--navy, #0b2545); }
+
+/* Sign-up: section headings inside the application form */
+.form-section { margin: 14px 0 -4px; padding-top: 18px; border-top: 1px solid rgba(11,37,69,.12); font-size: 13px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--red, #c8102e); }
+.form-section:first-child { margin-top: 0; padding-top: 0; border-top: 0; }

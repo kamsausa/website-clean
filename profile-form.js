@@ -1,8 +1,9 @@
-// Member profile form, shared by onboarding.html (first-time setup) and the
-// "My profile" dialog in portal.html.
+// Member profile form, shared by signup.html (the membership application), onboarding.html
+// (older accounts that still need a profile) and the "My profile" dialog in portal.html.
 //
 //   const form = KAMSA.ProfileForm.mount(container, { member, userId, lockCore });
 //   if (form.validate()) await form.save();   // returns the updated member row
+//   form.values()                              // the application, for sign-up (signup: true)
 //
 // lockCore = true once a member is approved: name, school, graduation year and
 // status become read-only (the database enforces the same rule).
@@ -67,7 +68,7 @@
         <input id="pf-linkedin" type="url" inputmode="url" autocomplete="url" maxlength="240" placeholder="linkedin.com/in/your-name">
       </label>
 
-      <div class="field">
+      <div class="field" data-photo-field>
         <span class="field-label">Profile photo <span class="opt">(optional)</span></span>
         <div class="avatar-row">
           <div class="avatar" id="pf-avatar" aria-hidden="true">K</div>
@@ -92,7 +93,7 @@
       </fieldset>
     </div>`;
 
-  function mount(container, { member = {}, userId, lockCore = false } = {}) {
+  function mount(container, { member = {}, userId, lockCore = false, signup = false } = {}) {
     container.innerHTML = TEMPLATE; // static markup only; values are set below via DOM properties
 
     const f = {
@@ -193,7 +194,15 @@
       if (urls[existingPath]) showImage(urls[existingPath]); else showInitials();
       f.photoRemove.hidden = false;
     }
-    loadExisting();
+    if (signup) {
+      // No account exists yet, so there's nowhere to upload a photo. Members add one later
+      // from My profile in the portal.
+      $('[data-photo-field]', container).remove();
+      $('#pf-consent-set .hint', container).textContent =
+        'Listed members can see your name, school, class year, chapter, specialty interests, email, and LinkedIn. Only approved members can see the directory, and you can change this anytime from the member portal.';
+    } else {
+      loadExisting();
+    }
     [f.first, f.last].forEach((i) => i.addEventListener('input', () => {
       if (!pendingBlob && (!existingPath || removeRequested)) showInitials();
     }));
@@ -312,7 +321,24 @@
       return data;
     }
 
-    const api = { validate, save, onError: null, fields: f };
+    // The application as plain values (sign-up sends it with the account request).
+    function values() {
+      return {
+        first_name: f.first.value.trim(),
+        last_name: f.last.value.trim(),
+        school_institution: f.school.value.trim(),
+        graduation_year: Number(f.year.value),
+        current_status: ($('input[name="pf-status"]:checked', container) || {}).value || null,
+        chapter_choice: f.chapter.value || null,
+        regional_chapter: f.chapter.value === 'none' ? null : f.chapter.value || null,
+        specialty_interest: specBoxes().filter((b) => b.checked).map((b) => b.value),
+        linkedin_profile: K.normalizeLinkedIn(f.linkedin.value) || null,
+        school_email: K.normalizeEmail(f.schoolEmail.value) || null,
+        consent_membership_directory: consentValue() === true,
+      };
+    }
+
+    const api = { validate, save, values, onError: null, fields: f };
     return api;
   }
 

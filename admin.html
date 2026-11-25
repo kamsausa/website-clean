@@ -8,13 +8,14 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#0b2545">
 <title>Member Management | KAMSA Admin</title>
-<link rel="icon" href="kamsa-logo.png">
+<link rel="icon" type="image/png" href="favicon.png">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="kamsa-auth.css">
 <style>
-  .stats { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:16px; margin:28px 0 8px; }
+  .stats { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; margin:28px 0 8px; }
   .stat { padding:22px 24px; border-radius:20px; background:#fff; box-shadow:0 18px 44px -34px rgba(11,37,69,.6); }
   .stat span { display:block; font-size:12px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
   .stat strong { display:block; margin-top:8px; font-size:34px; font-weight:800; color:var(--navy); }
@@ -34,7 +35,6 @@
   .pill { display:inline-flex; padding:5px 10px; border-radius:999px; font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; white-space:nowrap; background:rgba(11,37,69,.07); color:var(--text); }
   .pill.active { background:#eaf6ef; color:var(--ok); }
   .pill.pending { background:#fff4e0; color:#8a5700; }
-  .pill.incomplete { background:rgba(11,37,69,.07); color:var(--muted); }
   .pill.inactive, .pill.rejected { background:var(--err-bg); color:var(--err); }
   .row-actions { display:flex; gap:8px; flex-wrap:wrap; }
   .admin-filters { display:grid; grid-template-columns:2fr 1fr 1fr auto; gap:12px; margin-bottom:14px; align-items:end; }
@@ -43,7 +43,7 @@
   .detail-grid { display:grid; grid-template-columns:170px 1fr; gap:10px 18px; margin:0 0 24px; font-size:14.5px; }
   .detail-grid dt { font-size:11.5px; font-weight:700; letter-spacing:.09em; text-transform:uppercase; color:var(--muted); padding-top:2px; }
   .detail-grid dd { margin:0; color:var(--navy); overflow-wrap:anywhere; }
-  @media (max-width:900px) { .stats { grid-template-columns:1fr 1fr; } .admin-filters { grid-template-columns:1fr 1fr; } .admin-filters .search { grid-column:1 / -1; } }
+  @media (max-width:900px) { .stats { grid-template-columns:1fr; } .admin-filters { grid-template-columns:1fr 1fr; } .admin-filters .search { grid-column:1 / -1; } }
   @media (max-width:560px) { .detail-grid { grid-template-columns:1fr; gap:2px; } .detail-grid dd { margin-bottom:10px; } }
 </style>
 <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js" integrity="sha384-BWcjm9OdFth9TbhCxZPdm+gAOUMAzQy9nmTs12ioXdCcbVnJaPMn+fMUoQCLt60R" crossorigin="anonymous"></script>
@@ -73,7 +73,6 @@
     <div class="stats">
       <div class="stat"><span>Active</span><strong id="statActive">0</strong><small>approved members</small></div>
       <div class="stat"><span>Awaiting review</span><strong id="statReview">0</strong><small>profile done, needs approval</small></div>
-      <div class="stat"><span>Unfinished sign-ups</span><strong id="statIncomplete">0</strong><small>no profile yet</small></div>
       <div class="stat"><span>Directory opt-in</span><strong id="statDirectory">0</strong><small>active and listed</small></div>
     </div>
 
@@ -105,7 +104,6 @@
             <option value="">All statuses</option>
             <option value="active">Active</option>
             <option value="pending">Awaiting review</option>
-            <option value="incomplete">Unfinished sign-up</option>
             <option value="inactive">Inactive</option>
             <option value="rejected">Rejected</option>
           </select></label>

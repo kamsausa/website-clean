@@ -9,7 +9,8 @@
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#0b2545">
 <title>Confirm your email | KAMSA</title>
-<link rel="icon" href="kamsa-logo.png">
+<link rel="icon" type="image/png" href="favicon.png">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -32,10 +33,9 @@
   <h1 class="title" id="heading">Confirm your email</h1>
 
   <ol class="steps" id="steps" aria-label="Sign-up progress">
-    <li class="done">Create account</li>
+    <li class="done">Apply</li>
     <li class="current" aria-current="step" id="stepEmail">Confirm email</li>
-    <li id="stepProfile">Set up profile</li>
-    <li>Board review</li>
+    <li id="stepProfile">Board review</li>
   </ol>
 
   <div id="message" class="message" hidden></div>
@@ -44,7 +44,7 @@
 
   <!-- Token present: one click to confirm (keeps email security scanners from using up the link) -->
   <section id="confirmPanel" class="card" hidden>
-    <p id="confirmText" style="margin:0 0 22px;font-size:17px;line-height:1.6;color:var(--text)">Press the button below to confirm your email address and continue to your profile.</p>
+    <p id="confirmText" style="margin:0 0 22px;font-size:17px;line-height:1.6;color:var(--text)">Press the button below to confirm your email address and submit your application.</p>
     <div class="actions">
       <button type="button" class="btn btn-primary" id="confirmButton">Confirm my email</button>
     </div>
@@ -57,7 +57,7 @@
     </div>
     <p id="doneText" style="margin:0 0 22px;font-size:17px;line-height:1.6;color:var(--text)">Your email is confirmed.</p>
     <div class="actions">
-      <a class="btn btn-primary" id="continueLink" href="onboarding.html">Set up my profile</a>
+      <a class="btn btn-primary" id="continueLink" href="portal.html">Go to the member portal</a>
     </div>
   </section>
 

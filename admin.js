@@ -17,12 +17,10 @@
   // ---------------------------------------------------------------------------
   // Helpers
   // ---------------------------------------------------------------------------
-  // Display stage: unfinished sign-ups are 'pending' in the database but have no profile yet.
   function stageOf(m) {
-    if (!m.profile_completed_at && m.membership_status === 'pending') return 'incomplete';
     return m.membership_status || 'pending';
   }
-  const STAGE_LABEL = { active: 'Active', pending: 'Awaiting review', incomplete: 'Unfinished', inactive: 'Inactive', rejected: 'Rejected' };
+  const STAGE_LABEL = { active: 'Active', pending: 'Awaiting review', inactive: 'Inactive', rejected: 'Rejected' };
 
   function fullName(m) {
     return [m.first_name, m.last_name].filter(Boolean).join(' ') || '(no name)';
@@ -50,7 +48,6 @@
   function renderStats() {
     $('#statActive').textContent = members.filter((m) => m.membership_status === 'active').length;
     $('#statReview').textContent = members.filter((m) => stageOf(m) === 'pending').length;
-    $('#statIncomplete').textContent = members.filter((m) => stageOf(m) === 'incomplete').length;
     $('#statDirectory').textContent = members.filter((m) => m.membership_status === 'active' && m.consent_membership_directory).length;
   }
 
@@ -135,7 +132,11 @@
   // Data
   // ---------------------------------------------------------------------------
   async function loadMembers() {
-    const { data, error } = await sb.from('members').select('*').order('created_at', { ascending: false });
+    // Only completed sign-ups appear here. People who created an account but never
+    // finished their profile stay hidden until they submit it.
+    const { data, error } = await sb.from('members').select('*')
+      .not('profile_completed_at', 'is', null)
+      .order('created_at', { ascending: false });
     if (error) throw error;
     members = data || [];
     renderEverything();

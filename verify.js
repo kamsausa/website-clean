@@ -67,6 +67,11 @@
 
   async function finishSignedIn(doneText) {
     const state = await K.getState();
+    if (!doneText) {
+      doneText = state.stage === 'needs_profile'
+        ? 'Your email is confirmed. Next, tell us a bit about yourself so we can connect you with your chapter.'
+        : 'Your email is confirmed and your application is with the national board. We\'ll email you as soon as it\'s approved.';
+    }
     const next = K.pageForStage(state.stage);
     const label = state.stage === 'needs_profile' ? 'Set up my profile' : 'Go to the member portal';
     $('#continueLink').href = next;
@@ -113,7 +118,7 @@
           ? `Your login email is now ${email}. If we also sent a link to your other address, open that one too to finish the change.`
           : 'Your new email is confirmed.');
       }
-      return finishSignedIn('Your email is confirmed. Next, tell us a bit about yourself so we can connect you with your chapter.');
+      return finishSignedIn(null);
     }, { once: false });
   }
 
@@ -129,7 +134,7 @@
     // The email itself is already confirmed at this point, so logging in works.
     setHeading('Confirmed', 'Your email is confirmed');
     markEmailStepDone();
-    $('#doneText').textContent = 'You opened the link in a different browser or device, so we could not sign you in here. Log in to continue setting up your profile. (Resetting a password? Request a new link from this browser.)';
+    $('#doneText').textContent = 'You opened the link in a different browser or device, so we could not sign you in here. Your application is with the national board; log in anytime to check on it. (Resetting a password? Request a new link from this browser.)';
     $('#continueLink').href = K.PAGES.login;
     $('#continueLink').textContent = 'Log in';
     show('#donePanel');
