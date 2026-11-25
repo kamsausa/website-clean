@@ -1,7 +1,9 @@
 // Vercel Function: POST /api/member-status
 // Called by a Supabase Database Webhook whenever a row in public.members is updated.
 //   • profile just completed  → emails the board that a new member is ready to review
-//   • status just became active → emails the member (Brevo template) + adds them to the Brevo members list
+//   • first approval            → emails the member (Brevo template) + adds them to the Brevo members list
+//   • renewal reminders         → renewal_notice set by the daily renewal job (due_soon / due / lapsed)
+//   • renewal completed         → renewed_at changed (self-renewal or board reactivation)
 //
 // Environment variables (Vercel → Project → Settings → Environment Variables):
 //   WEBHOOK_SECRET          long random string; the same value goes in the Supabase webhook header
@@ -43,6 +45,27 @@ async function brevo(path, body) {
 }
 
 const clean = (v, max = 120) => String(v ?? '').replace(/[\r\n\t]+/g, ' ').trim().slice(0, max);
+const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const DAY = 86400000;
+const longDate = (d) => d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'America/New_York' });
+
+// Simple branded email body for renewal messages.
+function renewalEmail({ first, heading, paragraphs, button, url }) {
+  const ps = paragraphs.map((p) => `<p style="margin:0 0 16px;font-size:16px;line-height:1.6;color:#26405f">${esc(p)}</p>`).join('');
+  const html = `<!doctype html><html><body style="margin:0;background:#f4f6fa;font-family:Arial,Helvetica,sans-serif">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6fa;padding:32px 12px"><tr><td align="center">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border-radius:16px;padding:36px 32px">
+<tr><td>
+<p style="margin:0 0 22px;font-size:13px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#c8102e">KAMSA Membership</p>
+<h1 style="margin:0 0 18px;font-size:26px;line-height:1.2;color:#0b2545">${esc(heading)}</h1>
+<p style="margin:0 0 16px;font-size:16px;line-height:1.6;color:#26405f">Hi ${esc(first || 'there')},</p>
+${ps}
+${button ? `<p style="margin:26px 0 8px"><a href="${esc(url)}" style="display:inline-block;padding:14px 26px;border-radius:999px;background:#c8102e;color:#ffffff;font-size:14px;font-weight:700;text-decoration:none">${esc(button)}</a></p>` : ''}
+<p style="margin:26px 0 0;font-size:13px;line-height:1.6;color:#5c7291">Questions? Reply to kamsa.usa@gmail.com.<br>Korean American Medical Student Association</p>
+</td></tr></table></td></tr></table></body></html>`;
+  const text = [`Hi ${first || 'there'},`, '', ...paragraphs, '', button ? `${button}: ${url}` : '', '', 'KAMSA — kamsa.usa@gmail.com'].join('\n');
+  return { htmlContent: html, textContent: text };
+}
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' });
@@ -82,8 +105,8 @@ export default async function handler(req, res) {
     }));
   }
 
-  // 2. The board approved the member.
-  if (old?.membership_status !== 'active' && record.membership_status === 'active' && email) {
+  // 2. The board approved the member for the first time.
+  if (old?.membership_status !== 'active' && record.membership_status === 'active' && !old?.approved_at && email) {
     tasks.push(brevo('/smtp/email', {
       sender,
       to: [{ email, name: `${first} ${last}`.trim() || undefined }],
@@ -98,6 +121,71 @@ export default async function handler(req, res) {
         updateEnabled: true,
       }));
     }
+  }
+
+  // 3. Yearly renewal reminders (set by the daily renewal job).
+  const base = record.renewed_at || record.approved_at;
+  const due = base ? new Date(new Date(base).getTime() + 365 * DAY) : null;
+  const renewUrl = `${site}/portal.html?renew=1`;
+  const notice = record.renewal_notice;
+  if (notice && notice !== old?.renewal_notice && email && due) {
+    const graceEnds = new Date(due.getTime() + 30 * DAY);
+    const copy = {
+      due_soon: {
+        subject: 'Time to renew your KAMSA membership',
+        heading: 'Time to renew your membership',
+        paragraphs: [
+          `Your KAMSA membership renews on ${longDate(due)}. Renewing is free and takes about a minute.`,
+          "When you renew, you'll confirm your profile and update anything that has changed: your status (for example, pre-med to medical student), school, graduation year, specialty interests, or LinkedIn.",
+        ],
+        button: 'Renew my membership',
+      },
+      due: {
+        subject: 'Your KAMSA membership is due for renewal',
+        heading: 'Your membership is due for renewal',
+        paragraphs: [
+          `Your KAMSA membership was due for renewal on ${longDate(due)}. Renew by ${longDate(graceEnds)} to keep access to the member directory, resources, and partner perks.`,
+          'It only takes a minute: confirm your details, update anything that has changed, and you are set for another year.',
+        ],
+        button: 'Renew now',
+      },
+      lapsed: {
+        subject: 'Your KAMSA membership has lapsed',
+        heading: 'Your membership has lapsed',
+        paragraphs: [
+          "We didn't receive your renewal, so your KAMSA membership is now inactive and the member directory, resources, and partner perks are paused.",
+          'You can renew at any time. Your membership is active again as soon as you do, with the same membership ID.',
+        ],
+        button: 'Renew my membership',
+      },
+    }[notice];
+    if (copy) {
+      tasks.push(brevo('/smtp/email', {
+        sender,
+        to: [{ email, name: `${first} ${last}`.trim() || undefined }],
+        subject: copy.subject,
+        ...renewalEmail({ first, heading: copy.heading, paragraphs: copy.paragraphs, button: copy.button, url: renewUrl }),
+      }));
+    }
+  }
+
+  // 4. Renewal completed (the member renewed, or the board reactivated them).
+  if (record.renewed_at && record.renewed_at !== old?.renewed_at && record.membership_status === 'active' && email && due) {
+    tasks.push(brevo('/smtp/email', {
+      sender,
+      to: [{ email, name: `${first} ${last}`.trim() || undefined }],
+      subject: 'Your KAMSA membership is renewed',
+      ...renewalEmail({
+        first,
+        heading: 'Thanks for renewing!',
+        paragraphs: [
+          `Your KAMSA membership is active through ${longDate(due)}. Your membership ID is ${clean(record.membership_id, 40)}.`,
+          "We'll send you a reminder when it's time to renew again.",
+        ],
+        button: 'Go to the member portal',
+        url: `${site}/portal.html`,
+      }),
+    }));
   }
 
   const results = await Promise.allSettled(tasks);

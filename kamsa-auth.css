@@ -258,3 +258,9 @@ dialog.modal::backdrop { background: rgba(11, 37, 69, .42); }
 /* Sign-up: section headings inside the application form */
 .form-section { margin: 14px 0 -4px; padding-top: 18px; border-top: 1px solid rgba(11,37,69,.12); font-size: 13px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--red, #c8102e); }
 .form-section:first-child { margin-top: 0; padding-top: 0; border-top: 0; }
+
+/* Portal: yearly renewal */
+.renew-banner { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px 24px; margin-top: 22px; padding: 20px 24px; border-radius: 18px; background: #fff; border: 1.5px solid rgba(200,16,46,.35); box-shadow: 0 18px 44px -34px rgba(11,37,69,.6); }
+.renew-banner strong { display: block; margin-bottom: 4px; font-size: 17px; color: var(--navy, #0b2545); }
+.renew-banner span { font-size: 15px; line-height: 1.55; color: var(--soft); }
+.renew-banner.urgent { background: #fff7f8; border-color: #c8102e; }

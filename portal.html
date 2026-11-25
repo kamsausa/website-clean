@@ -56,6 +56,19 @@
     </div>
   </section>
 
+  <!-- Lapsed: the yearly renewal was missed -->
+  <section id="lapsedPanel" hidden style="max-width:760px">
+    <p class="kicker">Membership renewal</p>
+    <h1 class="title" id="lapsedHeading">Your membership has lapsed</h1>
+    <div class="card">
+      <p style="margin:0 0 12px;font-size:17px;line-height:1.6;color:var(--text)" id="lapsedText">KAMSA memberships renew once a year. Renew now to get the directory, member resources, and partner perks back right away.</p>
+      <p style="margin:0 0 22px;font-size:15px;line-height:1.6;color:var(--soft)">Renewing is free and takes a minute: confirm your details and update anything that has changed. Your membership ID stays the same: <span class="email-pill" data-membership-id></span></p>
+      <div class="actions">
+        <button type="button" class="btn btn-primary" data-open-renewal>Renew my membership</button>
+      </div>
+    </div>
+  </section>
+
   <!-- Inactive / not approved -->
   <section id="inactivePanel" hidden style="max-width:760px">
     <p class="kicker">Membership</p>
@@ -72,7 +85,14 @@
       <p class="kicker">Members only</p>
       <h1 class="title" id="welcome">Member Portal</h1>
       <p class="lede" style="margin:0 0 14px">Member resources, the membership directory, and member-only partner perks.</p>
-      <p class="small muted" style="margin:0">Membership ID: <span class="email-pill" data-membership-id></span></p>
+      <p class="small muted" style="margin:0">Membership ID: <span class="email-pill" data-membership-id></span><span id="renewLine"></span></p>
+      <div class="renew-banner" id="renewBanner" hidden>
+        <div>
+          <strong id="renewTitle">Time to renew your membership</strong>
+          <span id="renewText"></span>
+        </div>
+        <button type="button" class="btn btn-primary" data-open-renewal>Renew now</button>
+      </div>
     </section>
 
     <section aria-labelledby="resTitle" style="margin-bottom:64px" id="resourcesSection">
@@ -108,6 +128,7 @@
       <button type="button" class="modal-close" id="closeProfile" aria-label="Close">×</button>
     </div>
     <div id="profileMessage" class="message" hidden></div>
+    <p class="hint" id="renewIntro" hidden style="margin:0 0 18px;font-size:15px">Please check that everything is still right, especially your <strong>status</strong>, <strong>school</strong>, and <strong>graduation year</strong> if you've moved on (for example, from pre-med to medical school). Your membership then renews for another year.</p>
     <div id="profileFields"></div>
     <div class="actions" style="margin-top:26px;justify-content:flex-end">
       <button type="button" class="btn btn-secondary" id="cancelProfile">Cancel</button>
