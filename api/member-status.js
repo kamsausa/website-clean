@@ -15,11 +15,18 @@ import crypto from 'node:crypto';
 
 const BREVO = 'https://api.brevo.com/v3';
 
+function equalBytes(a, b) {
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+
+// Node reads HTTP header values byte-for-byte as Latin-1. Supabase sends the secret as
+// UTF-8, so a secret with a character like "£" arrives garbled unless we turn the header
+// back into its original bytes before comparing.
 function sameSecret(given, expected) {
   if (!given || !expected) return false;
-  const a = Buffer.from(String(given));
-  const b = Buffer.from(String(expected));
-  return a.length === b.length && crypto.timingSafeEqual(a, b);
+  const want = Buffer.from(String(expected), 'utf8');
+  return equalBytes(Buffer.from(String(given), 'latin1'), want)
+      || equalBytes(Buffer.from(String(given), 'utf8'), want);
 }
 
 async function brevo(path, body) {
