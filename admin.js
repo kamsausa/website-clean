@@ -18,9 +18,19 @@
   // Helpers
   // ---------------------------------------------------------------------------
   function stageOf(m) {
+    if (m.membership_status === 'inactive' && m.lapsed_at) return 'lapsed';
     return m.membership_status || 'pending';
   }
-  const STAGE_LABEL = { active: 'Active', pending: 'Awaiting review', inactive: 'Inactive', rejected: 'Rejected' };
+  const STAGE_LABEL = { active: 'Active', pending: 'Awaiting review', lapsed: 'Lapsed', inactive: 'Inactive', rejected: 'Rejected' };
+
+  // Renewal column: the date, flagged when it's coming up or overdue.
+  function renewalCell(m) {
+    const info = K.renewalInfo(m);
+    if (!info || m.membership_status === 'pending' || m.membership_status === 'rejected') return el('td', {}, '—');
+    if (info.phase === 'lapsed') return el('td', {}, el('span', { class: 'sub', style: 'color:#c8102e;font-weight:700' }, 'Lapsed ' + fmtDate(m.lapsed_at)));
+    const note = info.phase === 'grace' ? 'Overdue' : info.phase === 'open' ? 'Due soon' : '';
+    return el('td', {}, fmtDate(info.due), note ? el('span', { class: 'sub', style: 'color:#c8102e;font-weight:700' }, note) : null);
+  }
 
   function fullName(m) {
     return [m.first_name, m.last_name].filter(Boolean).join(' ') || '(no name)';
@@ -49,6 +59,10 @@
     $('#statActive').textContent = members.filter((m) => m.membership_status === 'active').length;
     $('#statReview').textContent = members.filter((m) => stageOf(m) === 'pending').length;
     $('#statDirectory').textContent = members.filter((m) => m.membership_status === 'active' && m.consent_membership_directory).length;
+    $('#statRenewal').textContent = members.filter((m) => {
+      const i = m.membership_status === 'active' && K.renewalInfo(m);
+      return i && (i.phase === 'open' || i.phase === 'grace');
+    }).length;
   }
 
   function renderReview() {
@@ -95,7 +109,7 @@
     $('#allCount').textContent = `${rows.length} of ${members.length} shown`;
     const body = $('#allRows');
     if (!rows.length) {
-      body.replaceChildren(el('tr', { class: 'empty-row' }, el('td', { colspan: '8' }, members.length ? 'No members match these filters.' : 'No sign-ups yet.')));
+      body.replaceChildren(el('tr', { class: 'empty-row' }, el('td', { colspan: '9' }, members.length ? 'No members match these filters.' : 'No sign-ups yet.')));
       return;
     }
     body.replaceChildren(...rows.map((m) => {
@@ -109,6 +123,7 @@
         el('td', {}, pill(m)),
         el('td', {}, m.consent_membership_directory ? 'Listed' : 'Private'),
         el('td', {}, fmtDate(m.created_at)),
+        renewalCell(m),
         el('td', {}, details));
     }));
   }
@@ -193,6 +208,9 @@
     addDetail(list, 'Signed up', fmtDate(m.created_at));
     addDetail(list, 'Profile completed', fmtDate(m.profile_completed_at));
     addDetail(list, 'Approved', fmtDate(m.approved_at));
+    addDetail(list, 'Last renewed', m.renewed_at ? fmtDate(m.renewed_at) : '');
+    const ri = K.renewalInfo(m);
+    addDetail(list, 'Renewal', ri && m.approved_at ? (ri.phase === 'lapsed' ? `Lapsed ${fmtDate(m.lapsed_at)}` : fmtDate(ri.due)) : '');
     $('#detailStatus').value = m.membership_status || 'pending';
     $('#detailRole').value = m.regional_chapter_role || '';
     if (typeof dialog.showModal === 'function') dialog.showModal(); else dialog.setAttribute('open', '');
@@ -251,6 +269,7 @@
       ['Chapter role', 'regional_chapter_role'], ['Specialty interests', 'specialty_interest'], ['LinkedIn', 'linkedin_profile'],
       ['Membership status', 'membership_status'], ['Directory', 'consent_membership_directory'],
       ['Signed up', 'created_at'], ['Profile completed', 'profile_completed_at'], ['Approved', 'approved_at'],
+      ['Last renewed', 'renewed_at'], ['Lapsed', 'lapsed_at'],
     ];
     const lines = [cols.map((c) => csvCell(c[0])).join(',')]
       .concat(filtered().map((m) => cols.map((c) => csvCell(m[c[1]])).join(',')));

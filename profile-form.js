@@ -93,7 +93,8 @@
       </fieldset>
     </div>`;
 
-  function mount(container, { member = {}, userId, lockCore = false, signup = false } = {}) {
+  function mount(container, { member = {}, userId, lockCore = false, signup = false, renewal = false } = {}) {
+    if (renewal) lockCore = false; // renewal is when school, year and status can change
     container.innerHTML = TEMPLATE; // static markup only; values are set below via DOM properties
 
     const f = {
@@ -165,6 +166,14 @@
     if (member.profile_completed_at) {
       const c = $(`input[name="pf-consent"][value="${member.consent_membership_directory ? 'yes' : 'no'}"]`, container);
       if (c) c.checked = true;
+    }
+
+    if (renewal) {
+      // Names stay locked; everything else can be brought up to date.
+      [f.first, f.last].forEach((i) => { i.readOnly = true; });
+      $('.row2', container).after(
+        el('p', { class: 'hint', style: 'margin-top:-6px' }, 'Need to change your name? Email ',
+          el('a', { href: `mailto:${K.CONFIG.supportEmail || 'kamsa.usa@gmail.com'}` }, K.CONFIG.supportEmail || 'kamsa.usa@gmail.com'), '.'));
     }
 
     if (lockCore) {
@@ -270,9 +279,10 @@
     }
 
     // ---- Save ----
-    // mode 'complete' → complete_my_profile (onboarding, or edits while pending)
-    // mode 'update'   → update_my_profile   (approved members)
-    async function save({ mode = lockCore ? 'update' : 'complete' } = {}) {
+    // mode 'complete' → complete_my_profile  (onboarding, or edits while pending)
+    // mode 'update'   → update_my_profile    (approved members)
+    // mode 'renew'    → renew_my_membership  (yearly renewal)
+    async function save({ mode = renewal ? 'renew' : lockCore ? 'update' : 'complete' } = {}) {
       const linkedin = K.normalizeLinkedIn(f.linkedin.value) || null;
       const chapter = f.chapter.value === 'none' ? null : f.chapter.value;
       const specialties = specBoxes().filter((b) => b.checked).map((b) => b.value);
@@ -285,7 +295,19 @@
         imagePath = uploaded;
       }
 
-      const rpc = mode === 'update'
+      const rpc = mode === 'renew'
+        ? K.sb().rpc('renew_my_membership', {
+          p_school_institution: f.school.value.trim(),
+          p_graduation_year: Number(f.year.value),
+          p_current_status: ($('input[name="pf-status"]:checked', container) || {}).value || null,
+          p_regional_chapter: chapter,
+          p_specialty_interest: specialties,
+          p_linkedin_profile: linkedin,
+          p_school_email: K.normalizeEmail(f.schoolEmail.value) || null,
+          p_profile_image_path: imagePath,
+          p_consent_membership_directory: consent,
+        })
+        : mode === 'update'
         ? K.sb().rpc('update_my_profile', {
           p_linkedin_profile: linkedin,
           p_regional_chapter: chapter,

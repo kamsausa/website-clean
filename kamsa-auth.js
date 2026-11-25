@@ -57,7 +57,9 @@
 
   // ---------------------------------------------------------------------------
   // Membership state → which page the visitor belongs on
-  // stages: signed_out | unconfirmed | needs_profile | pending | active | inactive | error
+  // stages: signed_out | unconfirmed | needs_profile | pending | active | lapsed | inactive | error
+  //   lapsed = the yearly renewal was missed (the member can renew themselves);
+  //   inactive = set by the board.
   // ---------------------------------------------------------------------------
   async function getState({ verify = false } = {}) {
     const client = sb();
@@ -94,9 +96,39 @@
     if (!member || !member.profile_completed_at) stage = 'needs_profile';
     else if (member.membership_status === 'active') stage = 'active';
     else if (member.membership_status === 'pending') stage = 'pending';
+    else if (member.membership_status === 'inactive' && member.lapsed_at) stage = 'lapsed';
     else stage = 'inactive';
 
     return { stage, user, member, isAdmin };
+  }
+
+  // ---------------------------------------------------------------------------
+  // Yearly renewal (the database rules live in supabase/membership_renewal.sql)
+  //   phase: 'current'  — nothing to do yet
+  //          'open'     — renewal window is open (30 days before the renewal date)
+  //          'grace'    — past the renewal date; access continues for 30 more days
+  //          'lapsed'   — missed; the member must renew to get access back
+  // ---------------------------------------------------------------------------
+  const DAY = 86400000;
+  const RENEWAL = { windowDays: 30, graceDays: 30 };
+  function renewalInfo(m) {
+    if (!m) return null;
+    const base = m.renewed_at || m.approved_at;
+    const due = m.renewal_due_at ? new Date(m.renewal_due_at) : base ? new Date(new Date(base).getTime() + 365 * DAY) : null;
+    if (!due || Number.isNaN(due.getTime())) return null;
+    const opens = new Date(due.getTime() - RENEWAL.windowDays * DAY);
+    const graceEnds = new Date(due.getTime() + RENEWAL.graceDays * DAY);
+    const now = Date.now();
+    let phase = 'current';
+    if (m.membership_status === 'inactive' && m.lapsed_at) phase = 'lapsed';
+    else if (m.membership_status === 'active') {
+      if (now >= due.getTime()) phase = 'grace';
+      else if (now >= opens.getTime()) phase = 'open';
+    }
+    return { due, opens, graceEnds, phase, daysLeft: Math.ceil((due.getTime() - now) / DAY) };
+  }
+  function fmtLongDate(d) {
+    return d ? d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : '';
   }
 
   function pageForStage(stage) {
@@ -436,7 +468,7 @@
   window.KAMSA = {
     CONFIG, STATUSES, CHAPTERS, SPECIALTIES, MAX_SPECIALTIES, PAGES,
     sb, pageUrl, go, getState, pageForStage, signOut,
-    friendlyError, showMessage, setBusy, cooldown, bindPasswordToggles,
+    friendlyError, showMessage, setBusy, cooldown, bindPasswordToggles, renewalInfo, fmtLongDate,
     passwordScore, passwordProblem, markInvalid, clearInvalid,
     normalizeEmail, isEmail, normalizeLinkedIn, safeHttpsUrl, initials,
     prepareAvatar, uploadAvatar, removeAvatar, signedAvatarUrls,
