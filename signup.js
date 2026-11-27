@@ -177,6 +177,7 @@
     const problem = K.passwordProblem(pw);
     if (problem) bad('#signupPassword', problem);
     else if (pw !== pw2) bad('#signupPasswordConfirm', "Passwords don't match.");
+    if (!$('#ageConfirm').checked) bad('#ageConfirm', 'KAMSA membership is for people 18 or older.');
     if (!$('#terms').checked) bad('#terms', 'Please agree to continue.');
     if (!ok) {
       K.showMessage(msg, 'A few fields need your attention.', 'error');
