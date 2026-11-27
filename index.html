@@ -34,7 +34,8 @@
     @keyframes kamsa-marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
     [data-r~="marquee"] { overflow: hidden; -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 6%, #000 94%, transparent 100%); mask-image: linear-gradient(90deg, transparent 0, #000 6%, #000 94%, transparent 100%); }
     [data-r~="mtrack"] { display: flex; width: max-content; animation: kamsa-marquee 38s linear infinite; }
-    [data-r~="marquee"]:hover [data-r~="mtrack"], [data-r~="marquee"]:focus-within [data-r~="mtrack"] { animation-play-state: paused; }
+    /* Keeps scrolling under the mouse; pauses only while a keyboard user has a logo focused. */
+    [data-r~="marquee"]:has(:focus-visible) [data-r~="mtrack"] { animation-play-state: paused; }
     @media (prefers-reduced-motion: reduce) {
       [data-r~="mtrack"] { animation: none; flex-wrap: wrap; width: auto; }
       [data-dup="true"] { display: none !important; }
