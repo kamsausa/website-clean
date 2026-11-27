@@ -50,5 +50,11 @@
       "destination": "/",
       "permanent": true
     }
+  ],
+  "crons": [
+    {
+      "path": "/api/purge-inactive",
+      "schedule": "37 10 * * *"
+    }
   ]
 }
