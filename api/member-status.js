@@ -4,6 +4,7 @@
 //   • first approval            → emails the member (Brevo template) + adds them to the Brevo members list
 //   • renewal reminders         → renewal_notice set by the daily renewal job (due_soon / due / lapsed)
 //   • renewal completed         → renewed_at changed (self-renewal or board reactivation)
+//   • list upkeep               → lapsed/deactivated members leave the Brevo members list; reactivated members rejoin
 //
 // Environment variables (Vercel → Project → Settings → Environment Variables):
 //   WEBHOOK_SECRET          long random string; the same value goes in the Supabase webhook header
@@ -42,6 +43,17 @@ async function brevo(path, body) {
     body: JSON.stringify(body),
   });
   if (!res.ok) throw new Error(`Brevo ${path} failed (${res.status}): ${await res.text()}`);
+}
+
+// Removing someone who is already off the list (or not in Brevo) returns 400; that's fine.
+async function brevoRemoveFromList(listId, email) {
+  const res = await fetch(`${BREVO}/contacts/lists/${listId}/contacts/remove`, {
+    method: 'POST',
+    headers: { 'api-key': process.env.BREVO_API_KEY, 'content-type': 'application/json', accept: 'application/json' },
+    body: JSON.stringify({ emails: [email] }),
+  });
+  if (res.ok || res.status === 400 || res.status === 404) return;
+  throw new Error(`Brevo list remove failed (${res.status}): ${await res.text()}`);
 }
 
 const clean = (v, max = 120) => String(v ?? '').replace(/[\r\n\t]+/g, ' ').trim().slice(0, max);
@@ -186,6 +198,24 @@ export default async function handler(req, res) {
         url: `${site}/portal.html`,
       }),
     }));
+  }
+
+  // 5. Keep the Brevo members list to active members only.
+  //    Leaving active (lapsed, or set inactive by the board) → remove from the list.
+  //    Coming back (renewal or board reactivation, not first approval) → add back.
+  //    Re-adding never overrides an unsubscribe: Brevo keeps unsubscribed contacts blocked.
+  const listId = Number(process.env.BREVO_LIST_MEMBERS);
+  if (listId && email && old) {
+    if (old.membership_status === 'active' && record.membership_status !== 'active') {
+      tasks.push(brevoRemoveFromList(listId, email));
+    } else if (old.membership_status !== 'active' && record.membership_status === 'active' && old.approved_at) {
+      tasks.push(brevo('/contacts', {
+        email,
+        attributes: { FIRSTNAME: first, LASTNAME: last },
+        listIds: [listId],
+        updateEnabled: true,
+      }));
+    }
   }
 
   const results = await Promise.allSettled(tasks);
